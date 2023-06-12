@@ -7,32 +7,50 @@ def sort_dict(dictionary: dict):
     return {k: v for k, v in sorted(dictionary.items(), key=lambda item: item[1], reverse=True)}
 
 
+def sorted_node_degrees(network: list[tuple]) -> dict:
+    single_pfam = {}
+    for i, j in network:
+        try:
+            single_pfam[i] = single_pfam.get(i) + 1
+        except TypeError:
+            single_pfam[i] = 1
+
+        try:
+            single_pfam[j] = single_pfam.get(j) + 1
+        except TypeError:
+            single_pfam[j] = 1
+
+    return sort_dict(single_pfam)
+
+
 gold_standard = pickle.load(open('gold_standard.pickle', 'rb'))
 
-single_pfam = {}
-for i, j in gold_standard:
-    try:
-        single_pfam[i] = single_pfam.get(i) + 1
-    except TypeError:
-        single_pfam[i] = 1
+single_pfam = sorted_node_degrees(gold_standard)
 
-    try:
-        single_pfam[j] = single_pfam.get(j) + 1
-    except TypeError:
-        single_pfam[j] = 1
+pfam_ids = list(single_pfam.keys())
+pfam_degrees = list(single_pfam.values())
 
-single_pfam = sort_dict(single_pfam)
+# printing the domains with the highest edge degree
+for i in range(5):
+    print(pfam_ids[i], single_pfam[pfam_ids[i]])
+print("")
 
-count = 0
-for i,j in single_pfam.items():
-    print(i, j)
-    count += 1
-    if count > 5:
-        break
+# #######################
+# making the random graph
+# #######################
 
+random_graph = expected_degree_graph(pfam_degrees, seed=42)
 
-random_graph = expected_degree_graph(list(single_pfam.values()))
+random_gold = set()
+for i, j in random_graph.edges:
+    random_gold.add((pfam_ids[i], pfam_ids[j]))
 
-print(random_graph)
-print(len(random_graph))
-print(random_graph.nodes[1])
+# printing the node degrees of the new graph
+random_sorted = sorted_node_degrees(random_gold)
+random_graph_ids = list(random_sorted.keys())
+
+for i in range(5):
+    print(random_graph_ids[i], random_sorted[random_graph_ids[i]])
+
+# saving the graph for it to be used in PPIDM
+pickle.dump(random_gold, open('random_gold.pickle', 'wb'))
