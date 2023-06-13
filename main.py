@@ -33,9 +33,9 @@ if __name__ == '__main__':
     # sifts_reader_process('sifts', 'pfam')
     # ic3k.clean_3did_kbdock_domine_downloaded_files()
 
-    # filtering.create_wrong_assocations()
+    filtering.create_wrong_assocations()
 
-    filtering.assign_interaction()
+    # filtering.assign_interaction()
     print("Took:", timeit.default_timer() - start)
     sys.exit(0)
 

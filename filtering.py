@@ -2,6 +2,7 @@ import operator
 
 import datetime
 import pickle
+import sys
 
 from main import result_address, source_address
 import random
@@ -65,6 +66,14 @@ def interactions(file_path: str, info: dict, info_tuple_multiple: dict, source: 
     return interactions_intact, pfam_intact, info, info_tuple_multiple
 
 
+def coef_score(coefficients: list, interaction: list):
+    sources = ['intact', 'dip', 'mint', 'biogrid', 'string_exp', 'string_rest', 'sifts_acc', 'hprd']
+    result = []
+    for coef, src in zip(coefficients, sources):
+        result.append(coef * interaction[src])
+    return result
+
+
 def create_wrong_assocations():
     start = datetime.datetime.now()
     print("Create NEGATIVE assocaitions from all inputs (around ? mins)")
@@ -84,8 +93,9 @@ def create_wrong_assocations():
     common_factors = set()
     dom_common_factors = dict()
     all_interactions_DDI = set()
-    for source in ['source1_intact', 'source2_mint', 'source3_dip', 'source4_biogrid', 'source5_string-exp',
-                   'source5_string-rest', 'source6_sifts', 'source7_hprd']:
+    for source in ['source1_intact']:
+    #r source in ['source1_intact', 'source2_mint', 'source3_dip', 'source4_biogrid', 'source5_string-exp',
+    #               'source5_string-rest', 'source6_sifts', 'source7_hprd']:
         file1 = open(result_address + source + 'pfam', 'r')
         # interaction_score = dict()
         for line in file1:
@@ -103,15 +113,11 @@ def create_wrong_assocations():
 
             common_factors.add(cf)
 
-            if dom1 in dom_common_factors:
-                dom_common_factors[dom1].add(cf)
-            else:
+            if dom1 not in dom_common_factors:
                 dom_common_factors[dom1] = set()
             dom_common_factors[dom1].add(cf)
 
-            if dom2 in dom_common_factors:
-                dom_common_factors[dom2].add(cf)
-            else:
+            if dom2 not in dom_common_factors:
                 dom_common_factors[dom2] = set()
             dom_common_factors[dom2].add(cf)
 
@@ -121,14 +127,19 @@ def create_wrong_assocations():
 
     counter = 0
     used = set()
-    result_file = open(result_address + 'negative_set1', 'w')
+    result_file = open(result_address + 'negative_set', 'w')
 
+    # for every domain that has interactions
     for dom in dom_common_factors:
         counter += 1
         # print(counter)
+        # get the interactions of that domain
         number_cf_for_dom = dom_common_factors[dom]
+        # remove them from all interactions in general
         all_possible_cf_for_dom = common_factors - number_cf_for_dom
+        # randomly get the same amount of interactions from the rest (= node degree)
         wrong_cfs = random.sample(all_possible_cf_for_dom, len(number_cf_for_dom))
+        # save it
         wrongcf_foreach_dom[dom] = wrong_cfs
 
     counter = 0
@@ -148,16 +159,14 @@ def create_wrong_assocations():
                 continue
             used.add(interaction)
 
+            # making sure the interactions are not in the positive set already
             if interaction in gs or interaction in all_interactions_DDI:
                 continue
 
-            # number_cf_for_dom1 = dom_common_factors[dom1]
-            # all_possible_cf_for_dom1 = common_factors - number_cf_for_dom1
-            wrong_cfs1 = wrongcf_foreach_dom[dom1]
+            # set of all wrong common factors (hashes)
+            wrong_cfs1: set = wrongcf_foreach_dom[dom1]
 
-            # number_cf_for_dom2 = dom_common_factors[dom2]
-            # all_possible_cf_for_dom2 = common_factors - number_cf_for_dom2
-            wrong_cfs2 = wrongcf_foreach_dom[dom2]
+            wrong_cfs2: set = wrongcf_foreach_dom[dom2]
 
             intersection = set(wrong_cfs1) & set(wrong_cfs2)
             nominator = len(intersection)
@@ -238,7 +247,8 @@ def assign_interaction():
                     (interactions_3did)
 
     print("Getting gold_standard interactions: " + str(datetime.datetime.now() - start) + "\n")
-    pickle.dump(gold_standard, open('gold_standard.pickle', 'wb'))
+    # pickle.dump(gold_standard, open('gold_standard.pickle', 'wb'))
+    gold_standard = pickle.load(open('random_gold.pickle', 'rb'))
 
     train_set = random.sample(gold_standard, int(len(gold_standard) / 2))
     test_set = gold_standard - set(train_set)
@@ -277,19 +287,12 @@ def assign_interaction():
                                     lenSize = len(backgroundData)
                                     coef_summation = coef1 + coef2 + coef3 + coef4 + coef5 + coef6 + coef7 + coef8
                                     all_data_positive_negative = {}
+                                    coefs = [coef1, coef2, coef3, coef4, coef5, coef6, coef7, coef8]
                                     for datum in gold_standard:
                                         if datum[0] in info:
                                             if datum[1] in info[datum[0]]:
-                                                first_part = coef1 * info[datum[0]][datum[1]]['intact']
-                                                second_part = coef2 * info[datum[0]][datum[1]]['dip']
-                                                third_part = coef3 * info[datum[0]][datum[1]]['mint']
-                                                fourth_part = coef4 * info[datum[0]][datum[1]]['biogrid']
-                                                fifth_part = coef5 * info[datum[0]][datum[1]]['string_exp']
-                                                sixth_part = coef6 * info[datum[0]][datum[1]]['string_rest']
-                                                seventh_part = coef7 * info[datum[0]][datum[1]]['sifts_acc']
-                                                eighth_part = coef8 * info[datum[0]][datum[1]]['hprd']
-                                                all_data_positive_negative[datum] = (
-                                                                                            first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
+                                                dom_score = coef_score(coefs, info[datum[0]][datum[1]])
+                                                all_data_positive_negative[datum] = sum(dom_score) / coef_summation
                                             else:
                                                 all_data_positive_negative[datum] = 0
                                         else:
@@ -298,16 +301,8 @@ def assign_interaction():
                                     for datum in backgroundData:
                                         if datum[0] in info:
                                             if datum[1] in info[datum[0]]:
-                                                first_part = coef1 * info[datum[0]][datum[1]]['intact']
-                                                second_part = coef2 * info[datum[0]][datum[1]]['dip']
-                                                third_part = coef3 * info[datum[0]][datum[1]]['mint']
-                                                fourth_part = coef4 * info[datum[0]][datum[1]]['biogrid']
-                                                fifth_part = coef5 * info[datum[0]][datum[1]]['string_exp']
-                                                sixth_part = coef6 * info[datum[0]][datum[1]]['string_rest']
-                                                seventh_part = coef7 * info[datum[0]][datum[1]]['sifts_acc']
-                                                eighth_part = coef8 * info[datum[0]][datum[1]]['hprd']
-                                                all_data_positive_negative[datum] = (
-                                                                                            first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
+                                                dom_score = coef_score(coefs, info[datum[0]][datum[1]])
+                                                all_data_positive_negative[datum] = sum(dom_score) / coef_summation
 
                                     sorted_all_data_positive_negative = sorted(all_data_positive_negative.items(),
                                                                                key=operator.itemgetter(1), reverse=True)
@@ -345,24 +340,16 @@ def assign_interaction():
     print(best_area_under_curve)
 
     all_data_scores = dict()
-    coef_summation = best_coef1 + best_coef2 + best_coef3 + best_coef4 + best_coef5 + best_coef6 + best_coef7 + best_coef8
+    best_coefs = [best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6, best_coef7, best_coef8]
+    coef_summation = sum(best_coefs)
     for item1 in info:
         for item2 in info[item1]:
-            first_part = best_coef1 * info[item1][item2]['intact']
-            second_part = best_coef2 * info[item1][item2]['dip']
-            third_part = best_coef3 * info[item1][item2]['mint']
-            fourth_part = best_coef4 * info[item1][item2]['biogrid']
-            fifth_part = best_coef5 * info[item1][item2]['string_exp']
-            sixth_part = best_coef6 * info[item1][item2]['string_rest']
-            seventh_part = best_coef7 * info[item1][item2]['sifts_acc']
-            eighth_part = best_coef8 * info[item1][item2]['hprd']
+            dom_score = coef_score(best_coefs, info[item1][item2])
             if item1 in all_data_scores:
-                all_data_scores[item1][item2] = (
-                                                        first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
+                all_data_scores[item1][item2] = sum(dom_score) / coef_summation
             else:
                 all_data_scores[item1] = dict()
-                all_data_scores[item1][item2] = (
-                                                        first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
+                all_data_scores[item1][item2] = sum(dom_score) / coef_summation
 
     # finding negative set with low-scoring
     print("finding low-scoring associations where score cap be anything")
@@ -462,18 +449,8 @@ def assign_interaction():
             flag = False
             if datum[0] in all_data_scores:
                 if datum[1] in all_data_scores[datum[0]]:
-                    # coef_summation = best_coef1 + best_coef2 + best_coef3 + best_coef4 + best_coef5 + best_coef6 + best_coef7 + best_coef8
-                    # first_part = best_coef1 * info[datum[0]][datum[1]]['intact']
-                    # second_part = best_coef2 * info[datum[0]][datum[1]]['dip']
-                    # third_part = best_coef3 * info[datum[0]][datum[1]]['mint']
-                    # fourth_part = best_coef4 * info[datum[0]][datum[1]]['biogrid']
-                    # fifth_part = best_coef5 * info[datum[0]][datum[1]]['string_exp']
-                    # sixth_part = best_coef6 * info[datum[0]][datum[1]]['string_rest']
-                    # seventh_part = best_coef7 * info[datum[0]][datum[1]]['sifts_acc']
-                    # eighth_part = best_coef8 * info[datum[0]][datum[1]]['hprd']
+
                     score = all_data_scores[datum[0]][datum[1]]
-                    # score = (
-                    #             first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
                     if score >= threshold:
                         # flag = True
                         count_for_train += 1
@@ -484,19 +461,8 @@ def assign_interaction():
             # flag = False
             if datum[0] in all_data_scores:
                 if datum[1] in all_data_scores[datum[0]]:
-                    # coef_summation = float(best_coef1 + best_coef2 + best_coef3 + best_coef4 + best_coef5 + best_coef6 + best_coef7 + best_coef8)
-                    # first_part = best_coef1 * info[datum[0]][datum[1]]['intact']
-                    # second_part = best_coef2 * info[datum[0]][datum[1]]['dip']
-                    # third_part = best_coef3 * info[datum[0]][datum[1]]['mint']
-                    # fourth_part = best_coef4 * info[datum[0]][datum[1]]['biogrid']
-                    # fifth_part = best_coef5 * info[datum[0]][datum[1]]['string_exp']
-                    # sixth_part = best_coef6 * info[datum[0]][datum[1]]['string_rest']
-                    # seventh_part = best_coef7 * info[datum[0]][datum[1]]['sifts_acc']
-                    # eighth_part = best_coef8 * info[datum[0]][datum[1]]['hprd']
 
                     score = all_data_scores[datum[0]][datum[1]]
-                    # score = (
-                    #             first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
                     if score >= threshold:
                         # flag = True
                         count_for_test += 1
@@ -651,7 +617,10 @@ def assign_interaction():
         # sixth_part = best_coef6 * info[datum[0]][datum[1]]['string_rest']
         # seventh_part = best_coef7 * info[datum[0]][datum[1]]['sifts_acc']
         # eighth_part = best_coef8 * info[datum[0]][datum[1]]['hprd']
-        score = all_data_scores[datum[0]][datum[1]]
+        try:
+            score = all_data_scores[datum[0]][datum[1]]
+        except KeyError:
+            score = 0
         # score = (
         #             first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
 
