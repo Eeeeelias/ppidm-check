@@ -475,19 +475,8 @@ def assign_interaction():
             else:
                 if datum[0] in info:
                     if datum[1] in info[datum[0]]:
-                        coef_summation = float(
-                            best_coef1 + best_coef2 + best_coef3 + best_coef4 + best_coef5 + best_coef6 + best_coef7 + best_coef8)
-                        first_part = best_coef1 * info[datum[0]][datum[1]]['intact']
-                        second_part = best_coef2 * info[datum[0]][datum[1]]['dip']
-                        third_part = best_coef3 * info[datum[0]][datum[1]]['mint']
-                        fourth_part = best_coef4 * info[datum[0]][datum[1]]['biogrid']
-                        fifth_part = best_coef5 * info[datum[0]][datum[1]]['string_exp']
-                        sixth_part = best_coef6 * info[datum[0]][datum[1]]['string_rest']
-                        seventh_part = best_coef7 * info[datum[0]][datum[1]]['sifts_acc']
-                        eighth_part = best_coef8 * info[datum[0]][datum[1]]['hprd']
-
-                        score = (
-                                        first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
+                        coef_summation = float(sum(best_coefs))
+                        score = sum(coef_score(best_coefs, info[datum[0]][datum[1]])) / coef_summation
             if score >= threshold:
                 # flag = True
                 count_for_train_negative += 1
@@ -500,19 +489,8 @@ def assign_interaction():
             else:
                 if datum[0] in info:
                     if datum[1] in info[datum[0]]:
-                        coef_summation = float(
-                            best_coef1 + best_coef2 + best_coef3 + best_coef4 + best_coef5 + best_coef6 + best_coef7 + best_coef8)
-                        first_part = best_coef1 * info[datum[0]][datum[1]]['intact']
-                        second_part = best_coef2 * info[datum[0]][datum[1]]['dip']
-                        third_part = best_coef3 * info[datum[0]][datum[1]]['mint']
-                        fourth_part = best_coef4 * info[datum[0]][datum[1]]['biogrid']
-                        fifth_part = best_coef5 * info[datum[0]][datum[1]]['string_exp']
-                        sixth_part = best_coef6 * info[datum[0]][datum[1]]['string_rest']
-                        seventh_part = best_coef7 * info[datum[0]][datum[1]]['sifts_acc']
-                        eighth_part = best_coef8 * info[datum[0]][datum[1]]['hprd']
-
-                        score = (
-                                        first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
+                        coef_summation = float(sum(best_coefs))
+                        score = sum(coef_score(best_coefs, info[datum[0]][datum[1]])) / coef_summation
             if score >= threshold:
                 # flag = True
                 count_for_test_negative += 1
@@ -521,29 +499,11 @@ def assign_interaction():
         for datum1 in info:
             for datum2 in info[datum1]:
                 flag = False
-                coef_summation = float(
-                    best_coef1 + best_coef2 + best_coef3 + best_coef4 + best_coef5 + best_coef6 + best_coef7 + best_coef8)
-                first_part = best_coef1 * info[datum1][datum2]['intact']
-                second_part = best_coef2 * info[datum1][datum2]['dip']
-                third_part = best_coef3 * info[datum1][datum2]['mint']
-                fourth_part = best_coef4 * info[datum1][datum2]['biogrid']
-                fifth_part = best_coef5 * info[datum1][datum2]['string_exp']
-                sixth_part = best_coef6 * info[datum1][datum2]['string_rest']
-                seventh_part = best_coef7 * info[datum1][datum2]['sifts_acc']
-                eighth_part = best_coef8 * info[datum1][datum2]['hprd']
-
-                score = (
-                                first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
+                coef_summation = float(sum(best_coefs))
+                score = sum(coef_score(best_coefs, info[datum1][datum2])) / coef_summation
                 if score >= threshold:
                     flag = True
                     count_all_found += 1
-
-        # print(count_all_found)
-        # print(count_for_train)
-        # print(count_for_test)
-        # print(count_for_train_negative)
-        # print(count_for_test_negative)
-        # print(' ')
 
         tp_train = count_for_train
         fn_train = len(train_set) - tp_train
@@ -570,19 +530,7 @@ def assign_interaction():
     result_merged = open(result_address + 'pfam-pfam-interaction-merged', 'w')
     for datum1 in info:
         for datum2 in info[datum1]:
-            # flag = False
-            # coef_summation = best_coef1 + best_coef2 + best_coef3 + best_coef4 + best_coef5 + best_coef6 + best_coef7 + best_coef8
-            # first_part = best_coef1 * info[datum1][datum2]['intact']
-            # second_part = best_coef2 * info[datum1][datum2]['dip']
-            # third_part = best_coef3 * info[datum1][datum2]['mint']
-            # fourth_part = best_coef4 * info[datum1][datum2]['biogrid']
-            # fifth_part = best_coef5 * info[datum1][datum2]['string_exp']
-            # sixth_part = best_coef6 * info[datum1][datum2]['string_rest']
-            # seventh_part = best_coef7 * info[datum1][datum2]['sifts_acc']
-            # eighth_part = best_coef8 * info[datum1][datum2]['hprd']
             score = all_data_scores[datum1][datum2]
-            # score = (
-            #             first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
             result_merged.write(datum1 + '\t' + datum2 + '\t' + str(info[datum1][datum2]['intact']) + '\t' + str(
                 info[datum1][datum2]['dip']) + '\t' + str(info[datum1][datum2]['mint']) + '\t' + str(
                 info[datum1][datum2]['biogrid']) + '\t' + str(info[datum1][datum2]['string_exp']) + '\t' + str(
@@ -608,21 +556,10 @@ def assign_interaction():
         else:
             flag = 'test-'
 
-        # coef_summation = best_coef1 + best_coef2 + best_coef3 + best_coef4 + best_coef5 + best_coef6 + best_coef7 + best_coef8
-        # first_part = best_coef1 * info[datum[0]][datum[1]]['intact']
-        # second_part = best_coef2 * info[datum[0]][datum[1]]['dip']
-        # third_part = best_coef3 * info[datum[0]][datum[1]]['mint']
-        # fourth_part = best_coef4 * info[datum[0]][datum[1]]['biogrid']
-        # fifth_part = best_coef5 * info[datum[0]][datum[1]]['string_exp']
-        # sixth_part = best_coef6 * info[datum[0]][datum[1]]['string_rest']
-        # seventh_part = best_coef7 * info[datum[0]][datum[1]]['sifts_acc']
-        # eighth_part = best_coef8 * info[datum[0]][datum[1]]['hprd']
         try:
             score = all_data_scores[datum[0]][datum[1]]
         except KeyError:
             score = 0
-        # score = (
-        #             first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
 
         if score >= best_threshold:
             flag = flag + 'yes'
@@ -647,18 +584,8 @@ def assign_interaction():
         if neg_model == 1:
             score = negatives_score[datum]
         else:
-            coef_summation = best_coef1 + best_coef2 + best_coef3 + best_coef4 + best_coef5 + best_coef6 + best_coef7 + best_coef8
-            first_part = best_coef1 * info[datum[0]][datum[1]]['intact']
-            second_part = best_coef2 * info[datum[0]][datum[1]]['dip']
-            third_part = best_coef3 * info[datum[0]][datum[1]]['mint']
-            fourth_part = best_coef4 * info[datum[0]][datum[1]]['biogrid']
-            fifth_part = best_coef5 * info[datum[0]][datum[1]]['string_exp']
-            sixth_part = best_coef6 * info[datum[0]][datum[1]]['string_rest']
-            seventh_part = best_coef7 * info[datum[0]][datum[1]]['sifts_acc']
-            eighth_part = best_coef8 * info[datum[0]][datum[1]]['hprd']
-
-            score = (
-                            first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
+            coef_summation = sum(best_coefs)
+            score = sum(coef_score(best_coefs, info[datum[0]][datum[1]])) / coef_summation
 
         if score >= best_threshold:
             flag = flag + 'yes'
@@ -692,17 +619,9 @@ def assign_interaction():
     for datum1 in info_tuple_multiple:
         for datum2 in info_tuple_multiple[datum1]:
             # flag = False
-            coef_summation = best_coef1 + best_coef2 + best_coef3 + best_coef4 + best_coef5 + best_coef6 + best_coef7 + best_coef8
-            first_part = best_coef1 * info_tuple_multiple[datum1][datum2]['intact']
-            second_part = best_coef2 * info_tuple_multiple[datum1][datum2]['dip']
-            third_part = best_coef3 * info_tuple_multiple[datum1][datum2]['mint']
-            fourth_part = best_coef4 * info_tuple_multiple[datum1][datum2]['biogrid']
-            fifth_part = best_coef5 * info_tuple_multiple[datum1][datum2]['string_exp']
-            sixth_part = best_coef6 * info_tuple_multiple[datum1][datum2]['string_rest']
-            seventh_part = best_coef7 * info_tuple_multiple[datum1][datum2]['sifts_acc']
-            eighth_part = best_coef8 * info_tuple_multiple[datum1][datum2]['hprd']
-            score = (
-                            first_part + second_part + third_part + fourth_part + fifth_part + sixth_part + seventh_part + eighth_part) / coef_summation
+            coef_summation = sum(best_coefs)
+            score = sum(coef_score(best_coefs, info_tuple_multiple[datum1][datum2])) / coef_summation
+
             result_merged_tuple.write(
                 datum1 + '\t' + datum2 + '\t' + str(info_tuple_multiple[datum1][datum2]['intact']) + '\t' + str(
                     info_tuple_multiple[datum1][datum2]['dip']) + '\t' + str(
