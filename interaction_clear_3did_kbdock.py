@@ -73,14 +73,14 @@ def intersection_CAPS_3did_kbdock():
 
     interactions_kbdock = set()
     pfam_kbdock = set()
-    file1 = open(result_address + 'kbdock', 'r')
-    for line in file1:
-        line_sp = line.rstrip().split('\t')
-        item1 = line_sp[0]
-        item2 = line_sp[1]
-        interactions_kbdock.add((item1, item2))
-        pfam_kbdock.add(item1)
-        pfam_kbdock.add(item2)
+    # file1 = open(result_address + 'kbdock', 'r')
+    # for line in file1:
+    #     line_sp = line.rstrip().split('\t')
+    #     item1 = line_sp[0]
+    #     item2 = line_sp[1]
+    #     interactions_kbdock.add((item1, item2))
+    #     pfam_kbdock.add(item1)
+    #     pfam_kbdock.add(item2)
 
     interactions_domine = set()
     pfam_domine = set()

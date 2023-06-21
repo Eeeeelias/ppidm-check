@@ -8,6 +8,8 @@ from main import result_address, source_address
 import random
 from math import sqrt
 
+# reproducibility yay
+random.seed(42)
 
 def read_interactions(file_path: str):
     interactions_3did = set()
@@ -94,7 +96,7 @@ def create_wrong_assocations():
     dom_common_factors = dict()
     all_interactions_DDI = set()
     for source in ['source1_intact']:
-    #r source in ['source1_intact', 'source2_mint', 'source3_dip', 'source4_biogrid', 'source5_string-exp',
+    # source in ['source1_intact', 'source2_mint', 'source3_dip', 'source4_biogrid', 'source5_string-exp',
     #               'source5_string-rest', 'source6_sifts', 'source7_hprd']:
         file1 = open(result_address + source + 'pfam', 'r')
         # interaction_score = dict()
@@ -248,8 +250,9 @@ def assign_interaction():
 
     print("Getting gold_standard interactions: " + str(datetime.datetime.now() - start) + "\n")
     # pickle.dump(gold_standard, open('gold_standard.pickle', 'wb'))
-    gold_standard = pickle.load(open('random_gold.pickle', 'rb'))
+    # gold_standard = pickle.load(open('random_gold.pickle', 'rb'))
 
+    # rewire only train set!
     train_set = random.sample(gold_standard, int(len(gold_standard) / 2))
     test_set = gold_standard - set(train_set)
     print("Length of gold standard:", len(gold_standard))
@@ -262,7 +265,7 @@ def assign_interaction():
             if (item1, item2) not in gold_standard:
                 backgroundData.append((item1, item2))
 
-    print(len(backgroundData))
+    print("Lenght of background data:", len(backgroundData))
     # backgroundData = random.sample(backgroundData, len(backgroundData) / 100)
     # print(len(backgroundData))
 
@@ -318,9 +321,9 @@ def assign_interaction():
                                         else:
                                             area_under_curve += (yindex / len(gold_standard)) * (1.0 / lenSize)
 
-                                    print(area_under_curve)
-                                    print(coef1, coef2, coef3, coef4, coef5, coef6, coef7, coef8)
-                                    print(
+                                    print("AUC:", area_under_curve)
+                                    print("Coefficients:", coef1, coef2, coef3, coef4, coef5, coef6, coef7, coef8)
+                                    print("Best Coefficients",
                                         best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6,
                                         best_coef7, best_coef8)
                                     print("\n")
@@ -336,8 +339,8 @@ def assign_interaction():
                                         best_coef7 = coef7
                                         best_coef8 = coef8
 
-    print(best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6, best_coef7, best_coef8)
-    print(best_area_under_curve)
+    print("Overall best coefs:", best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6, best_coef7, best_coef8)
+    print("Best AUC:", best_area_under_curve)
 
     all_data_scores = dict()
     best_coefs = [best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6, best_coef7, best_coef8]
@@ -369,7 +372,7 @@ def assign_interaction():
             negatives_score[(line_sp[0], line_sp[1])] = float(line_sp[5])
             # print(line_sp[5])
 
-        print(len(negatives))
+        print("Negatives", len(negatives))
         gold_standard_negative_set = random.sample(negatives, len(gold_standard))
 
     elif neg_model == 2:
@@ -435,6 +438,7 @@ def assign_interaction():
     best_fmeasure_test = 0
 
     # calculating best Threshold and best F-measure
+    count = 1
     for threshold in range(30, 1, -1):
         threshold = float(threshold) / 1000
         count_for_train = 0
@@ -520,34 +524,35 @@ def assign_interaction():
             best_threshold = threshold
             best_fmeasure_test = f_score_test
 
-        print(tp_train, fn_train, fp_train, f_score_train, best_fmeasure)
-        print(threshold, best_threshold)
-        print(tp_test, fn_test, fp_test, f_score_test, best_fmeasure_test)
-        print(count_all_found)
-        print(' ')
+        print(f"############### Iteration {count} #################")
+        print('Training Set'.ljust(50), "| Testing Set")
+        print(f"T\t\tPredicted".ljust(45), "| T\t\tPredicted")
+        print("T\t\tPos\t   Neg".ljust(45), "| T\t\tPos\t   Neg")
+        print(f"T Pos\t{tp_train} | {fn_train}".ljust(48), f"| T Pos\t{tp_test} | {fn_test}")
+        print(f"T Neg\t{fp_train:4} | / ".ljust(48), f"| T Neg\t{fp_test:4} | / ")
+        print(f"T F_score: {round(f_score_train, 5)} | Best F_measure: {round(best_fmeasure, 5)}".ljust(50),
+              f"| T F_score: {round(f_score_test, 5)} | Best F_measure: {round(best_fmeasure_test, 5)}")
+        print("-" * 80)
+        print(
+            f"Current threshold: {threshold} | Best threshold: {best_threshold} | Count all found: {count_all_found}\n")
+        count += 1
 
     result_calculated = open(result_address + 'pfam-pfam-interaction-calculated', 'w')
     result_merged = open(result_address + 'pfam-pfam-interaction-merged', 'w')
     for datum1 in info:
         for datum2 in info[datum1]:
             score = all_data_scores[datum1][datum2]
-            result_merged.write(datum1 + '\t' + datum2 + '\t' + str(info[datum1][datum2]['intact']) + '\t' + str(
+
+            result_string = datum1 + '\t' + datum2 + '\t' + str(info[datum1][datum2]['intact']) + '\t' + str(
                 info[datum1][datum2]['dip']) + '\t' + str(info[datum1][datum2]['mint']) + '\t' + str(
                 info[datum1][datum2]['biogrid']) + '\t' + str(info[datum1][datum2]['string_exp']) + '\t' + str(
                 info[datum1][datum2]['string_rest']) + '\t' + str(info[datum1][datum2]['sifts_acc']) + '\t' + str(
                 info[datum1][datum2]['hprd']) + '\t' + str(
-                score) + '\n')
-
+                score) + '\n'
+            result_merged.write(result_string)
             if score >= best_threshold:
                 flag = True
-                result_calculated.write(
-                    datum1 + '\t' + datum2 + '\t' + str(info[datum1][datum2]['intact']) + '\t' + str(
-                        info[datum1][datum2]['dip']) + '\t' + str(info[datum1][datum2]['mint']) + '\t' + str(
-                        info[datum1][datum2]['biogrid']) + '\t' + str(info[datum1][datum2]['string_exp']) + '\t' + str(
-                        info[datum1][datum2]['string_rest']) + '\t' + str(
-                        info[datum1][datum2]['sifts_acc']) + '\t' + str(
-                        info[datum1][datum2]['hprd']) + '\t' + str(
-                        score) + '\n')
+                result_calculated.write(result_string)
 
     result_gold_standard = open(result_address + 'pfam-pfam-interaction-goldstandard', 'w')
     for datum in gold_standard:

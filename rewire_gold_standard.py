@@ -1,4 +1,6 @@
 import pickle
+
+import networkx as nx
 from networkx import expected_degree_graph
 from networkx.classes.graphviews import generic_graph_view
 

@@ -24,23 +24,21 @@ if __name__ == '__main__':
     start = timeit.default_timer()
     # seqDom, seqpdbchain, pdbchainDom = pt.read_chain_dom()
     # pickle.dump((seqDom, seqpdbchain, pdbchainDom), open('seqDom_seqpdbchain_pdbchainDom.pickle', 'wb'))
-    # seqDom, seqpdbchain, pdbchainDom = pickle.load(open('seqDom_seqpdbchain_pdbchainDom.pickle', 'rb'))
-    # print("Loading files from pickle took:", round(timeit.default_timer() - start, 1), "seconds")
+    seqDom, seqpdbchain, pdbchainDom = pickle.load(open('seqDom_seqpdbchain_pdbchainDom.pickle', 'rb'))
+    print("Loading files from pickle took:", round(timeit.default_timer() - start, 1), "seconds")
 
-    #for i in sources:
-    #     pt.similarity_calculator_interaction(i, 'pfam', seqDom, seqpdbchain, pdbchainDom)
-
-    # sifts_reader_process('sifts', 'pfam')
+    # for i in sources:
+    #      pt.similarity_calculator_interaction(i, 'pfam', seqDom, seqpdbchain, pdbchainDom)
+    #
+    # # sifts_reader_process('sifts', 'pfam')
     # ic3k.clean_3did_kbdock_domine_downloaded_files()
-
-    filtering.create_wrong_assocations()
-
-    # filtering.assign_interaction()
-    print("Took:", timeit.default_timer() - start)
-    sys.exit(0)
-
-    ic3k.intersection_CAPS_3did_kbdock()
-    ic3k.kbdock_union_3did()
+    #
+    # filtering.create_wrong_assocations()
+    #
+    filtering.assign_interaction()
+    #
+    # ic3k.intersection_CAPS_3did_kbdock()
+    # ic3k.kbdock_union_3did()
 
     for i in sources:
         pv.pvalue_calculation(i, seqDom, pdbchainDom)
@@ -48,6 +46,7 @@ if __name__ == '__main__':
     pv.accumulate_pvalues()
     pv.gold_silver_bronze()
 
+    print("Took:", timeit.default_timer() - start)
     # checkOneOnedomain()
     # verify_go_for_each_pair()
 
