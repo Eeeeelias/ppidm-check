@@ -25,7 +25,7 @@ def sorted_node_degrees(network: list[tuple]) -> dict:
     return sort_dict(single_pfam)
 
 
-gold_standard = pickle.load(open('gold_standard.pickle', 'rb'))
+gold_standard = pickle.load(open('train_set.pickle', 'rb'))
 
 single_pfam = sorted_node_degrees(gold_standard)
 
@@ -55,4 +55,26 @@ for i in range(5):
     print(random_graph_ids[i], random_sorted[random_graph_ids[i]])
 
 # saving the graph for it to be used in PPIDM
-pickle.dump(random_gold, open('random_gold.pickle', 'wb'))
+pickle.dump(random_gold, open('random_train.pickle', 'wb'))
+
+for key in single_pfam.keys():
+    if key not in random_sorted.keys():
+        random_sorted[key] = 0
+
+
+# Visualising
+import matplotlib.pyplot as plt
+
+x = list(random_sorted.values())
+y = list(single_pfam.values())
+print(len(x), len(y))
+plt.scatter(x, y)
+# Adding labels to the plot
+plt.xlabel('expected degree')
+plt.ylabel('true degree')
+plt.plot([0, x[0]], [0, y[0]], 'r--')
+plt.title('Retaining node degree of the random network')
+
+# Displaying the plot
+plt.show()
+plt.savefig("expected_node_degree.png")
