@@ -347,22 +347,22 @@ def assign_interaction():
 
                                     if best_area_under_curve < area_under_curve:
                                         best_area_under_curve = area_under_curve
-                                        # best_coef1 = coef1
-                                        # best_coef2 = coef2
-                                        # best_coef3 = coef3
-                                        # best_coef4 = coef4
-                                        # best_coef5 = coef5
-                                        # best_coef6 = coef6
-                                        # best_coef7 = coef7
-                                        # best_coef8 = coef8
-                                        best_coef1 = 0
-                                        best_coef2 = 0
-                                        best_coef3 = 0
-                                        best_coef4 = 0
-                                        best_coef5 = 0
-                                        best_coef6 = 0
+                                        best_coef1 = coef1
+                                        best_coef2 = coef2
+                                        best_coef3 = coef3
+                                        best_coef4 = coef4
+                                        best_coef5 = coef5
+                                        best_coef6 = coef6
                                         best_coef7 = coef7
-                                        best_coef8 = 0
+                                        best_coef8 = coef8
+                                        # best_coef1 = 0
+                                        # best_coef2 = 0
+                                        # best_coef3 = 0
+                                        # best_coef4 = 0
+                                        # best_coef5 = 0
+                                        # best_coef6 = 0
+                                        # best_coef7 = coef7
+                                        # best_coef8 = 0
 
     print("Overall best coefs:", best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6, best_coef7, best_coef8)
     print("Best AUC:", best_area_under_curve)

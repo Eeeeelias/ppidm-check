@@ -10,7 +10,7 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
     print("P-value calculation for %s (around 2 secs)" % source)
 
     allPPI = set()
-    file1 = open(result_address + source, 'r')
+    file1 = open(source_address + source, 'r')
     for line in file1:
         line_sp = line.rstrip().split('\t')
         item1 = line_sp[0]
@@ -112,7 +112,7 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
 
         if Kde == 0 or source_score == '0':
             final_result.write(str(dom1) + "\t" + str(dom2) + "\t" + str(AssocScore) + "\t" + "NA" + "\n")
-            print("-")
+            # print("-")
             continue
         Nlist = []
         Nelist = []
@@ -186,7 +186,7 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
             result = 10 ** result
             p_value += result
 
-        print(p_value)
+        # print(p_value)
         if p_value > 1:
             p_value = "1*"
         final_result.write(str(dom1) + "\t" + str(dom2) + "\t" + str(AssocScore) + "\t" + str(p_value) + "\n")

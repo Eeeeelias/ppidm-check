@@ -24,7 +24,7 @@ if __name__ == '__main__':
     start = timeit.default_timer()
     # seqDom, seqpdbchain, pdbchainDom = pt.read_chain_dom()
     # pickle.dump((seqDom, seqpdbchain, pdbchainDom), open('seqDom_seqpdbchain_pdbchainDom.pickle', 'wb'))
-    # seqDom, seqpdbchain, pdbchainDom = pickle.load(open('seqDom_seqpdbchain_pdbchainDom.pickle', 'rb'))
+    seqDom, seqpdbchain, pdbchainDom = pickle.load(open('seqDom_seqpdbchain_pdbchainDom.pickle', 'rb'))
     print("Loading files from pickle took:", round(timeit.default_timer() - start, 1), "seconds")
 
     # for i in sources:
@@ -40,11 +40,11 @@ if __name__ == '__main__':
     # ic3k.intersection_CAPS_3did_kbdock()
     # ic3k.kbdock_union_3did()
 
-    #for i in sources:
-    #    pv.pvalue_calculation(i, seqDom, pdbchainDom)
+    for i in sources:
+        pv.pvalue_calculation(i, seqDom, pdbchainDom)
 
-    # pv.accumulate_pvalues()
-    # pv.gold_silver_bronze()
+    pv.accumulate_pvalues()
+    pv.gold_silver_bronze()
 
     print("Took:", timeit.default_timer() - start)
     # checkOneOnedomain()

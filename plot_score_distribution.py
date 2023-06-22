@@ -37,16 +37,15 @@ plt.style.use('ggplot')
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
 
 sns.kdeplot(negative_scores, color='orange', ax=ax1)
-ax1.set_ylabel('Negative train - Density')
 ax1.axvline(x=0.01586, linestyle='dotted', color='#0097ff', label='threshold (0.01586)')
 ax1.axvline(x=0.03, linestyle='dotted', color='#fc1b80', label='threshold (0.03)')
+ax1.set_ylabel('Negative train - Density')
 
 
 sns.kdeplot(gold_scores, color='blue', ax=ax2)
 ax2.axvline(x=0.01586, linestyle='dotted', color='#0097ff', label='threshold')
 ax2.axvline(x=0.03, linestyle='dotted', color='#fc1b80')
-
-ax2.set_ylabel('True train - Density')
+ax2.set_ylabel('Positive train - Density')
 
 plt.xlim(0, 1)
 
@@ -57,5 +56,5 @@ plt.suptitle('Score density in negatives vs. positives')
 # Displaying the plot
 plt.tight_layout()
 ax1.legend()
-plt.show()
 plt.savefig('score_density.png')
+plt.show()

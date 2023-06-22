@@ -72,9 +72,10 @@ for i in range(5):
     print(random_graph_ids[i], random_sorted[random_graph_ids[i]])
 
 # Visualising
+plt.style.use('ggplot')
 x = list(random_sorted.values())
 y = list(single_pfam.values())
-plt.scatter(x, y)
+plt.scatter(x, y, color='#1F77B4')
 # Adding labels to the plot
 plt.xlabel('expected degree')
 plt.ylabel('true degree')
@@ -82,5 +83,5 @@ plt.plot([0, x[0]], [0, y[0]], 'r--')
 plt.title('Retaining node degree of the random network')
 
 # Displaying the plot
-plt.show()
 plt.savefig("expected_node_degree.png")
+plt.show()
