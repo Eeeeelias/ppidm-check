@@ -11,6 +11,7 @@ from math import sqrt
 # reproducibility yay
 random.seed(42)
 
+
 def read_interactions(file_path: str):
     interactions_3did = set()
     pfam_3did = set()
@@ -74,6 +75,17 @@ def coef_score(coefficients: list, interaction: list):
     for coef, src in zip(coefficients, sources):
         result.append(coef * interaction[src])
     return result
+
+
+def extract_info(relevant_pfams: set, score_info: dict):
+    result = {}
+    for pfam_id in relevant_pfams:
+        try:
+            result[pfam_id] = score_info[pfam_id]
+        except KeyError:
+            result[pfam_id] = 0
+    pickle.dump(result, open('info_scores.pickle', 'wb'))
+    print("Wrote scores to pickle")
 
 
 def create_wrong_assocations():
@@ -254,7 +266,12 @@ def assign_interaction():
 
     # rewire only train set!
     train_set = random.sample(gold_standard, int(len(gold_standard) / 2))
-    test_set = gold_standard - set(train_set)
+    # train_set = pickle.load(open('random_train.pickle', 'rb'))
+
+    # test set can't be gold_std - train since train is random. test will now be half of gold_std
+    # test_set = gold_standard - set(random.sample(gold_standard, int(len(gold_standard) / 2)))
+    test_set = random.sample(gold_standard, int(len(gold_standard) / 2))
+    # gold_standard = pickle.load(open('random_gold.pickle', 'rb'))
     print("Length of gold standard:", len(gold_standard))
     print("Length of train set:", len(train_set))
     print("Length of test set:", len(test_set))
@@ -265,7 +282,7 @@ def assign_interaction():
             if (item1, item2) not in gold_standard:
                 backgroundData.append((item1, item2))
 
-    print("Lenght of background data:", len(backgroundData))
+    print("Length of background data:", len(backgroundData))
     # backgroundData = random.sample(backgroundData, len(backgroundData) / 100)
     # print(len(backgroundData))
 
@@ -330,14 +347,22 @@ def assign_interaction():
 
                                     if best_area_under_curve < area_under_curve:
                                         best_area_under_curve = area_under_curve
-                                        best_coef1 = coef1
-                                        best_coef2 = coef2
-                                        best_coef3 = coef3
-                                        best_coef4 = coef4
-                                        best_coef5 = coef5
-                                        best_coef6 = coef6
+                                        # best_coef1 = coef1
+                                        # best_coef2 = coef2
+                                        # best_coef3 = coef3
+                                        # best_coef4 = coef4
+                                        # best_coef5 = coef5
+                                        # best_coef6 = coef6
+                                        # best_coef7 = coef7
+                                        # best_coef8 = coef8
+                                        best_coef1 = 0
+                                        best_coef2 = 0
+                                        best_coef3 = 0
+                                        best_coef4 = 0
+                                        best_coef5 = 0
+                                        best_coef6 = 0
                                         best_coef7 = coef7
-                                        best_coef8 = coef8
+                                        best_coef8 = 0
 
     print("Overall best coefs:", best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6, best_coef7, best_coef8)
     print("Best AUC:", best_area_under_curve)
@@ -430,13 +455,13 @@ def assign_interaction():
     print("Length of gold standard negative:", len(gold_standard_negative_set))
     print("Length of negative train:", len(train_negative_set))
     print("Length of negative test:", len(test_negative_set))
-
     # print(train_negative_set)
 
     best_fmeasure = 0
     best_threshold = 1000
     best_fmeasure_test = 0
 
+    # plot distribution of scores for positives and negatives
     # calculating best Threshold and best F-measure
     count = 1
     for threshold in range(30, 1, -1):
@@ -485,6 +510,7 @@ def assign_interaction():
                 # flag = True
                 count_for_train_negative += 1
 
+
         for datum in test_negative_set:
             score = 0
             # flag = False
@@ -524,17 +550,19 @@ def assign_interaction():
             best_threshold = threshold
             best_fmeasure_test = f_score_test
 
+        bold = '\033[1m'
+        end = '\033[0m'
         print(f"############### Iteration {count} #################")
         print('Training Set'.ljust(50), "| Testing Set")
         print(f"T\t\tPredicted".ljust(45), "| T\t\tPredicted")
         print("T\t\tPos\t   Neg".ljust(45), "| T\t\tPos\t   Neg")
-        print(f"T Pos\t{tp_train} | {fn_train}".ljust(48), f"| T Pos\t{tp_test} | {fn_test}")
+        print(f"T Pos\t{tp_train:4} | {fn_train}".ljust(48), f"| T Pos\t{tp_test} | {fn_test}")
         print(f"T Neg\t{fp_train:4} | / ".ljust(48), f"| T Neg\t{fp_test:4} | / ")
-        print(f"T F_score: {round(f_score_train, 5)} | Best F_measure: {round(best_fmeasure, 5)}".ljust(50),
-              f"| T F_score: {round(f_score_test, 5)} | Best F_measure: {round(best_fmeasure_test, 5)}")
+        print(f"T F_score: {round(f_score_train, 5)} | Best F_measure: {bold + str(round(best_fmeasure, 5)) + end}".ljust(58),
+              f"| T F_score: {round(f_score_test, 5)} | Best F_measure: {bold + str(round(best_fmeasure_test, 5)) + end}")
         print("-" * 80)
         print(
-            f"Current threshold: {threshold} | Best threshold: {best_threshold} | Count all found: {count_all_found}\n")
+            f"Current threshold: {threshold} | Best threshold: {bold + str(best_threshold) + end} | Count all found: {count_all_found}\n")
         count += 1
 
     result_calculated = open(result_address + 'pfam-pfam-interaction-calculated', 'w')

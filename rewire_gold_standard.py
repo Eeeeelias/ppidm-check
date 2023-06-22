@@ -4,6 +4,8 @@ import networkx as nx
 from networkx import expected_degree_graph
 from networkx.classes.graphviews import generic_graph_view
 
+import matplotlib.pyplot as plt
+
 
 def sort_dict(dictionary: dict):
     return {k: v for k, v in sorted(dictionary.items(), key=lambda item: item[1], reverse=True)}
@@ -25,6 +27,10 @@ def sorted_node_degrees(network: list[tuple]) -> dict:
     return sort_dict(single_pfam)
 
 
+def change_random_ordering(real_order: list, random_degrees: dict) -> dict:
+    return {domain: random_degrees[domain] for domain in real_order}
+
+
 gold_standard = pickle.load(open('train_set.pickle', 'rb'))
 
 single_pfam = sorted_node_degrees(gold_standard)
@@ -32,10 +38,6 @@ single_pfam = sorted_node_degrees(gold_standard)
 pfam_ids = list(single_pfam.keys())
 pfam_degrees = list(single_pfam.values())
 
-# printing the domains with the highest edge degree
-for i in range(5):
-    print(pfam_ids[i], single_pfam[pfam_ids[i]])
-print("")
 
 # #######################
 # making the random graph
@@ -49,25 +51,29 @@ for i, j in random_graph.edges:
 
 # printing the node degrees of the new graph
 random_sorted = sorted_node_degrees(random_gold)
-random_graph_ids = list(random_sorted.keys())
-
-for i in range(5):
-    print(random_graph_ids[i], random_sorted[random_graph_ids[i]])
 
 # saving the graph for it to be used in PPIDM
 pickle.dump(random_gold, open('random_train.pickle', 'wb'))
 
+# adding zeroes just for visualisation
 for key in single_pfam.keys():
     if key not in random_sorted.keys():
         random_sorted[key] = 0
 
+random_sorted = change_random_ordering(pfam_ids, random_sorted)
+random_graph_ids = list(random_sorted.keys())
+
+# printing the domains with the highest edge degree
+for i in range(5):
+    print(pfam_ids[i], single_pfam[pfam_ids[i]])
+print("")
+
+for i in range(5):
+    print(random_graph_ids[i], random_sorted[random_graph_ids[i]])
 
 # Visualising
-import matplotlib.pyplot as plt
-
 x = list(random_sorted.values())
 y = list(single_pfam.values())
-print(len(x), len(y))
 plt.scatter(x, y)
 # Adding labels to the plot
 plt.xlabel('expected degree')
