@@ -43,8 +43,8 @@ if __name__ == '__main__':
     # for i in sources:
     #     pv.pvalue_calculation(i, seqDom, pdbchainDom)
 
-    pv.accumulate_pvalues()
-    pv.gold_silver_bronze()
+    # pv.accumulate_pvalues()
+    # pv.gold_silver_bronze()
 
     print("Took:", timeit.default_timer() - start)
     # checkOneOnedomain()

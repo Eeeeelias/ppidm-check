@@ -84,7 +84,7 @@ def extract_info(relevant_pfams: set, score_info: dict):
             result[pfam_id] = score_info[pfam_id]
         except KeyError:
             result[pfam_id] = 0
-    pickle.dump(result, open('info_scores.pickle', 'wb'))
+    pickle.dump(result, open('pickles/info_scores.pickle', 'wb'))
     print("Wrote scores to pickle")
 
 
@@ -261,17 +261,17 @@ def assign_interaction():
                     (interactions_3did)
 
     print("Getting gold_standard interactions: " + str(datetime.datetime.now() - start) + "\n")
-    # pickle.dump(gold_standard, open('gold_standard.pickle', 'wb'))
-    # gold_standard = pickle.load(open('random_gold.pickle', 'rb'))
+    # pickle.dump(gold_standard, open('pickles/gold_standard.pickle', 'wb'))
+    # gold_standard = pickle.load(open('pickles/random_gold.pickle', 'rb'))
 
     # rewire only train set!
     train_set = random.sample(gold_standard, int(len(gold_standard) / 2))
-    # train_set = pickle.load(open('random_train.pickle', 'rb'))
+    # train_set = pickle.load(open('pickles/random_train.pickle', 'rb'))
 
     # test set can't be gold_std - train since train is random. test will now be half of gold_std
     # test_set = gold_standard - set(random.sample(gold_standard, int(len(gold_standard) / 2)))
     test_set = random.sample(gold_standard, int(len(gold_standard) / 2))
-    # gold_standard = pickle.load(open('random_gold.pickle', 'rb'))
+    # gold_standard = pickle.load(open('pickles/random_gold.pickle', 'rb'))
     print("Length of gold standard:", len(gold_standard))
     print("Length of train set:", len(train_set))
     print("Length of test set:", len(test_set))

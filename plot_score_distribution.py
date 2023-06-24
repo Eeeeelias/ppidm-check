@@ -2,12 +2,12 @@ import pickle
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-scores = pickle.load(open('info_scores.pickle', 'rb'))
-gold_interactions = pickle.load(open('train_set.pickle', 'rb'))
+scores = pickle.load(open('pickles/info_scores.pickle', 'rb'))
+gold_interactions = pickle.load(open('pickles/train_set.pickle', 'rb'))
 print("Gold interactions:", len(gold_interactions))
-random_interactions = pickle.load(open('random_train.pickle', 'rb'))
+random_interactions = pickle.load(open('pickles/random_train.pickle', 'rb'))
 print("Random interactions:", len(random_interactions))
-negative_interactions = pickle.load(open('negative_train.pickle', 'rb'))
+negative_interactions = pickle.load(open('pickles/negative_train.pickle', 'rb'))
 print("Negative train interactions:", len(negative_interactions))
 
 
@@ -56,5 +56,5 @@ plt.suptitle('Score density in negatives vs. positives')
 # Displaying the plot
 plt.tight_layout()
 ax1.legend()
-plt.savefig('score_density.png')
+plt.savefig('pictures/score_density.png')
 plt.show()

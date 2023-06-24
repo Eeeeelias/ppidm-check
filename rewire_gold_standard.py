@@ -31,7 +31,7 @@ def change_random_ordering(real_order: list, random_degrees: dict) -> dict:
     return {domain: random_degrees[domain] for domain in real_order}
 
 
-gold_standard = pickle.load(open('train_set.pickle', 'rb'))
+gold_standard = pickle.load(open('pickles/train_set.pickle', 'rb'))
 
 single_pfam = sorted_node_degrees(gold_standard)
 
@@ -53,7 +53,7 @@ for i, j in random_graph.edges:
 random_sorted = sorted_node_degrees(random_gold)
 
 # saving the graph for it to be used in PPIDM
-pickle.dump(random_gold, open('random_train.pickle', 'wb'))
+pickle.dump(random_gold, open('pickles/random_train.pickle', 'wb'))
 
 # adding zeroes just for visualisation
 for key in single_pfam.keys():
@@ -83,5 +83,5 @@ plt.plot([0, x[0]], [0, y[0]], 'r--')
 plt.title('Retaining node degree of the random network')
 
 # Displaying the plot
-plt.savefig("expected_node_degree.png")
+plt.savefig("pictures/expected_node_degree.png")
 plt.show()
