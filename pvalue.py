@@ -257,11 +257,9 @@ def accumulate_pvalues():
     result = open(result_address + 'newpvalue-all', 'w')
     for item in intact_pvalue:
         result.write(
-            item[0] + '\t' + item[1] + '\t' + caps_score[item] + '\t' + intact_pvalue[item] + '\t' + dip_pvalue[
-                item] + '\t' + mint_pvalue[
-                item] + '\t' + hprd_pvalue[item] + '\t' + biogrid_pvalue[item] + '\t' + string_exp_pvalue[item] + '\t' +
-            string_rest_pvalue[
-                item] + '\t' + sifts_pvalue[item] + '\n')
+            item[0] + '\t' + item[1] + '\t' + caps_score[item] + '\t' + intact_pvalue[item] + '\t' + dip_pvalue[item] +
+            '\t' + mint_pvalue[item] + '\t' + hprd_pvalue[item] + '\t' + biogrid_pvalue[item] + '\t' +
+            string_exp_pvalue[item] + '\t' + string_rest_pvalue[item] + '\t' + sifts_pvalue[item] + '\n')
 
     result.close()
 

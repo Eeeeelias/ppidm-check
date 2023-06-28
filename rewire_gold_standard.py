@@ -79,7 +79,7 @@ plt.scatter(x, y, color='#1F77B4')
 # Adding labels to the plot
 plt.xlabel('expected degree')
 plt.ylabel('true degree')
-plt.plot([0, x[0]], [0, y[0]], 'r--')
+plt.plot([0, x[0]], [0, x[0]], 'r--')
 plt.title('Retaining node degree of the random network')
 
 # Displaying the plot

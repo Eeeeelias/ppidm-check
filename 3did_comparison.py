@@ -44,13 +44,13 @@ def filter_domine():
             if 'PF' not in line:
                 continue
             line_sp = line.split('|')
-            if line_sp[17] == 'LC':
-                PF1 = line_sp[0]
-                PF2 = line_sp[1]
-                if PF1 < PF2:
-                    associations.append((PF1, PF2))
-                else:
-                    associations.append((PF2, PF1))
+            # if line_sp[17] == 'HC' or line_sp[17] == 'MC':
+            PF1 = line_sp[0]
+            PF2 = line_sp[1]
+            if PF1 < PF2:
+                associations.append((PF1, PF2))
+            else:
+                associations.append((PF2, PF1))
     return associations
 
 
@@ -74,7 +74,8 @@ def filter_domine_sources():
                 if index == 1:
                     PF2 = part
                     continue
-                assoc = f"{PF1};{PF2}" if PF1 > PF2 else f"{PF2};{PF1}"
+                # assoc = f"{PF1};{PF2}" if PF1 > PF2 else f"{PF2};{PF1}"
+                assoc = (PF1, PF2) if PF1 > PF2 else (PF2, PF1)
                 if part == "1":
                     interactions[sources[index]].append(assoc)
     return interactions
@@ -94,17 +95,28 @@ all_known_ids = pickle.load(open('pickles/all_known_ids.pickle', 'rb'))
 # removing domains that were not known at the time of PPIDM
 did_2022_clean = remove_unknown_domains(all_known_ids, did_2022)
 # domine_clean = remove_unknown_domains(all_known_ids, domine)
-
+domine_clean = filter_domine()
 
 # visualisation
-# venn_diagrams(did_2017, did_2022_clean, inter_predicted, domine_clean, category='all')
-upset = from_contents(domine)
-print(upset)
-ax_dict = UpSet(upset, min_subset_size=15, show_counts=True).plot()
+did = {}
+did['did_2017'] = did_2017
+did['did_2022'] = did_2022_clean
+did['predicted'] = inter_predicted
+
+upset_did = from_contents(did)
+ax_dict = UpSet(upset_did, show_counts=True, show_percentages=True).plot()
+plt.savefig('pictures/upset_did_comparison.png')
 plt.show()
 
+# venn_diagrams(did_2017, did_2022_clean, inter_predicted, domine_clean, category='all')
+domine['predicted'] = inter_predicted
+upset = from_contents(domine)
+print(upset)
+# ax_dict = UpSet(upset, min_subset_size=100, show_counts=True).plot()
+#plt.show()
+
 # random info
-# print("overlap domine hc:", (1 - (len(set(domine_clean) - set(inter_predicted)) / len(set(domine_clean)))) * 100, "%")
+print("overlap 3did_2022 hc:", (1 - (len(set(did_2022) - set(did_2017) - set(inter_predicted)) / len(set(did_2022) - set(did_2017)))) * 100, "%")
 # print("total predicted:", len(set(domine_clean) & set(inter_predicted)))
 print("Length of interactions_gold:", len(inter_predicted))
 print("Length of did_2022:", len(did_2022))

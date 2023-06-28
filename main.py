@@ -35,7 +35,7 @@ if __name__ == '__main__':
     #
     # filtering.create_wrong_assocations()
     #
-    filtering.assign_interaction()
+    # filtering.assign_interaction()
     #
     # ic3k.intersection_CAPS_3did_kbdock()
     # ic3k.kbdock_union_3did()
@@ -46,8 +46,8 @@ if __name__ == '__main__':
     # pv.accumulate_pvalues()
     # pv.gold_silver_bronze()
 
+    pv.one_to_one()
     print("Took:", timeit.default_timer() - start)
     # checkOneOnedomain()
     # verify_go_for_each_pair()
 
-    # one_to_one()
