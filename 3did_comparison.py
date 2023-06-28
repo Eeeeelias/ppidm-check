@@ -7,6 +7,11 @@ from upsetplot import plot, from_contents, UpSet, from_memberships
 import itertools
 
 from main import source_address
+plt.style.use('ggplot')
+
+
+def sort_dict(dictionary: dict):
+    return {k: v for k, v in sorted(dictionary.items(), key=lambda item: item[1], reverse=True)}
 
 
 def read_interactions(file: str):
@@ -18,25 +23,6 @@ def read_interactions(file: str):
     return interactions
 
 
-def venn_diagrams(did_2017, did_2022, predicted, domine, category='gold'):
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-
-    venn3([set(did_2017), set(predicted), set(did_2022)], set_labels=('3did2017', 'predicted', '3did2022',), ax=ax1)
-    venn2([set(domine), set(predicted)], set_labels=('domine', 'predicted'), ax=ax2)
-
-    plt.suptitle(f'Overlap known new databases and predicted ({category}) interactions')
-    plt.savefig(f'overlap_domine_3did_{category}.png')
-    plt.show()
-
-
-def remove_unknown_domains(known_domains, new_domains):
-    clean = []
-    for i, j in new_domains:
-        if i in known_domains and j in known_domains:
-            clean.append((i, j))
-    return clean
-
-
 def filter_domine():
     with open(source_address + 'INTERACTION.txt', 'r') as f:
         associations = []
@@ -44,13 +30,13 @@ def filter_domine():
             if 'PF' not in line:
                 continue
             line_sp = line.split('|')
-            # if line_sp[17] == 'HC' or line_sp[17] == 'MC':
-            PF1 = line_sp[0]
-            PF2 = line_sp[1]
-            if PF1 < PF2:
-                associations.append((PF1, PF2))
-            else:
-                associations.append((PF2, PF1))
+            if line_sp[17] == 'HC' or line_sp[17] == 'MC':
+                PF1 = line_sp[0]
+                PF2 = line_sp[1]
+                if PF1 < PF2:
+                    associations.append((PF1, PF2))
+                else:
+                    associations.append((PF2, PF1))
     return associations
 
 
@@ -81,6 +67,66 @@ def filter_domine_sources():
     return interactions
 
 
+def remove_unknown_domains(known_domains, new_domains):
+    clean = []
+    for i, j in new_domains:
+        if i in known_domains and j in known_domains:
+            clean.append((i, j))
+    return clean
+
+
+def venn_diagrams(did_2017, did_2022, predicted, domine, category='gold'):
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+
+    venn3([set(did_2017), set(predicted), set(did_2022)], set_labels=('3did2017', 'predicted', '3did2022',), ax=ax1)
+    venn2([set(domine), set(predicted)], set_labels=('domine', 'predicted'), ax=ax2)
+
+    plt.suptitle(f'Overlap known new databases and predicted ({category}) interactions')
+    plt.savefig(f'overlap_domine_3did_{category}.png')
+    plt.show()
+
+
+def upset_plots(unformatted_dict: dict, title='Generic UpsetPlot', min_subset_size=None):
+    upset_format = from_contents(unformatted_dict)
+
+    if min_subset_size:
+        ax_dict = UpSet(upset_format, show_counts=True, min_subset_size=min_subset_size).plot()
+    else:
+        ax_dict = UpSet(upset_format, show_counts=True).plot()
+    plt.savefig(f'pictures/{title}.png')
+    plt.show()
+
+
+def domine_pairwise_comparison(predicted: list[tuple[str, str]], domine: dict[list[tuple[str, str]]]):
+    bold = '\033[1m'
+    end = '\033[0m'
+    overlap_relative_domine = {}
+    for key, value in domine.items():
+        overlap = len(set(value) & set(predicted))
+        relative_overlap = overlap / len(set(value))
+        overlap_relative_domine[key] = relative_overlap * 100
+        print(f"Predicted and {bold}{key}{end} overlap for {overlap}/{len(set(value))} "
+              f"({round(relative_overlap * 100, 1)}%) interactions")
+
+    overlap_relative_domine = sort_dict(overlap_relative_domine)
+    x = list(overlap_relative_domine.keys())
+    y = list(overlap_relative_domine.values())
+    plt.figure(figsize=(8, 6))
+
+    plt.bar(x, y, color='black')
+    plt.xlabel('Sources')
+    plt.ylabel('Overlap (in %)')
+    plt.title('Overlap DOMINE sources with predicted interactions')
+
+    for i, v in enumerate(y):
+        plt.text(i, v, str(round(v, 1)), ha='center', va='bottom')
+
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig('pictures/domine_comparison.png')
+    plt.show()
+
+
 # loading all files
 did_2022 = read_interactions('resultdata/3did_2022')
 did_2017 = read_interactions('resultdata/3did')
@@ -95,32 +141,25 @@ all_known_ids = pickle.load(open('pickles/all_known_ids.pickle', 'rb'))
 # removing domains that were not known at the time of PPIDM
 did_2022_clean = remove_unknown_domains(all_known_ids, did_2022)
 # domine_clean = remove_unknown_domains(all_known_ids, domine)
-domine_clean = filter_domine()
+# domine_clean = filter_domine()
 
+domine_pairwise_comparison(predicted=inter_predicted, domine=domine)
 # visualisation
-did = {}
-did['did_2017'] = did_2017
-did['did_2022'] = did_2022_clean
-did['predicted'] = inter_predicted
-
-upset_did = from_contents(did)
-ax_dict = UpSet(upset_did, show_counts=True, show_percentages=True).plot()
-plt.savefig('pictures/upset_did_comparison.png')
-plt.show()
-
-# venn_diagrams(did_2017, did_2022_clean, inter_predicted, domine_clean, category='all')
+did = {'did_2017': did_2017, 'did_2022': did_2022_clean, 'predicted': inter_predicted}
 domine['predicted'] = inter_predicted
-upset = from_contents(domine)
-print(upset)
-# ax_dict = UpSet(upset, min_subset_size=100, show_counts=True).plot()
-#plt.show()
+# upset_plots(did, 'upset_did_comparison')
+# upset_plots(domine, 'upset_domine_comparison', min_subset_size=100)
+# venn_diagrams(did_2017, did_2022_clean, interactions_gold, domine_clean, category='gold')
+
 
 # random info
-print("overlap 3did_2022 hc:", (1 - (len(set(did_2022) - set(did_2017) - set(inter_predicted)) / len(set(did_2022) - set(did_2017)))) * 100, "%")
+
+# print("overlap 3did_2022:", (1 - (len(set(did_2022) - set(did_2017) - set(inter_predicted)) /
+# len(set(did_2022) - set(did_2017)))) * 100, "%")
 # print("total predicted:", len(set(domine_clean) & set(inter_predicted)))
-print("Length of interactions_gold:", len(inter_predicted))
-print("Length of did_2022:", len(did_2022))
-print("Length of did_2017:", len(did_2017))
-print("Unique 2022:", len(set(did_2017) - set(did_2022)))
-print("Interaction overlap gold and did_2017:", len(set(interactions_gold) & set(did_2017)))
-print("Interaction overlap gold and did_2022:", len(set(interactions_gold) & set(did_2022)))
+# print("Length of interactions_gold:", len(inter_predicted))
+# print("Length of did_2022:", len(did_2022))
+# print("Length of did_2017:", len(did_2017))
+# print("Unique 2022:", len(set(did_2017) - set(did_2022)))
+# print("Interaction overlap gold and did_2017:", len(set(interactions_gold) & set(did_2017)))
+# print("Interaction overlap gold and did_2022:", len(set(interactions_gold) & set(did_2022)))
