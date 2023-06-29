@@ -1,6 +1,7 @@
 import pickle
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from matplotlib_venn import venn3, venn2
 from upsetplot import plot, from_contents, UpSet, from_memberships
@@ -11,6 +12,8 @@ plt.style.use('ggplot')
 
 
 def sort_dict(dictionary: dict):
+    if isinstance(list(dictionary.values())[0], list):
+        return {k: v for k, v in sorted(dictionary.items(), key=lambda item: sum(item[1]), reverse=True)}
     return {k: v for k, v in sorted(dictionary.items(), key=lambda item: item[1], reverse=True)}
 
 
@@ -127,6 +130,56 @@ def domine_pairwise_comparison(predicted: list[tuple[str, str]], domine: dict[li
     plt.show()
 
 
+def domine_pairwise_comparison_categories(predicted: dict[str, list[tuple[str, str]]],
+                                          domine: dict[str, list[tuple[str, str]]], save=True):
+    overlap_relative_domine = {}
+    for key, value in domine.items():
+        relative_overlaps = []
+        for pred_key in predicted.keys():
+            overlap = len(set(value) & set(predicted[pred_key]))
+            relative_overlaps.append((overlap / len(set(value))) * 100)
+        overlap_relative_domine[key] = relative_overlaps
+
+    overlap_relative_domine = sort_dict(overlap_relative_domine)
+    labels = list(overlap_relative_domine.keys())
+    bar_categories = ['gold', 'silver', 'bronze']
+
+    # This creates a numpy array of shape (3, 15)
+    values = np.array(list(overlap_relative_domine.values())).T
+
+    plt.figure(figsize=(8, 6))
+    fig, ax = plt.subplots()
+
+    # Calculate the sums for each category
+    sums = np.sum(values, axis=0)
+
+    # Plot the stacked bars
+    bottom = np.zeros(len(labels))
+    for i in range(len(bar_categories)):
+        ax.bar(labels, values[i], bottom=bottom, label=bar_categories[i])
+        bottom += values[i]
+
+    # Place the sum values on top of each bar
+    for j, (label, value) in enumerate(zip(labels, sums)):
+        ax.text(j, bottom[j] + 1, f'{value:.1f}', ha='center', va='center')
+
+    ax.set_ylim(top=np.max(bottom) + 3)  # Increase the value (5) as needed
+
+    # Adding labels and title
+    ax.set_xlabel('Sources')
+    ax.set_ylabel('Overlap (in %)')
+    ax.set_title('Overlap DOMINE sources with predicted by category')
+
+    # Adding a legend
+    ax.legend()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    if save:
+        plt.savefig('pictures/domine_comparison_category.png')
+    plt.show()
+
+
 # loading all files
 did_2022 = read_interactions('resultdata/3did_2022')
 did_2017 = read_interactions('resultdata/3did')
@@ -136,6 +189,7 @@ interactions_gold = read_interactions('resultdata/interactions_gold')
 inter_silver = read_interactions("resultdata/interactions_silver")
 inter_bronze = read_interactions("resultdata/interactions_bronze")
 inter_predicted = interactions_gold + inter_silver + inter_bronze
+inter_predicted_dict = {'gold': interactions_gold, 'silver': inter_silver, 'bronze': inter_bronze}
 all_known_ids = pickle.load(open('pickles/all_known_ids.pickle', 'rb'))
 
 # removing domains that were not known at the time of PPIDM
@@ -144,7 +198,7 @@ did_2022_clean = remove_unknown_domains(all_known_ids, did_2022)
 # domine_clean = filter_domine()
 
 # visualisation
-domine_pairwise_comparison(predicted=inter_predicted, domine=domine, save=False)
+domine_pairwise_comparison_categories(predicted=inter_predicted_dict, domine=domine, save=True)
 
 did = {'did_2017': did_2017, 'did_2022': did_2022_clean, 'predicted': inter_predicted}
 domine['predicted'] = inter_predicted
