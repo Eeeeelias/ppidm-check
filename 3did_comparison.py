@@ -6,8 +6,9 @@ import pandas as pd
 from matplotlib_venn import venn3, venn2
 from upsetplot import plot, from_contents, UpSet, from_memberships
 import itertools
-
+import seaborn as sns
 from main import source_address
+
 plt.style.use('ggplot')
 
 
@@ -131,7 +132,7 @@ def domine_pairwise_comparison(predicted: list[tuple[str, str]], domine: dict[li
 
 
 def domine_pairwise_comparison_categories(predicted: dict[str, list[tuple[str, str]]],
-                                          domine: dict[str, list[tuple[str, str]]], save=True):
+                                              domine: dict[str, list[tuple[str, str]]], save=True):
     overlap_relative_domine = {}
     for key, value in domine.items():
         relative_overlaps = []
@@ -141,39 +142,22 @@ def domine_pairwise_comparison_categories(predicted: dict[str, list[tuple[str, s
         overlap_relative_domine[key] = relative_overlaps
 
     overlap_relative_domine = sort_dict(overlap_relative_domine)
-    labels = list(overlap_relative_domine.keys())
-    bar_categories = ['gold', 'silver', 'bronze']
+    df = pd.DataFrame(overlap_relative_domine)
 
-    # This creates a numpy array of shape (3, 15)
-    values = np.array(list(overlap_relative_domine.values())).T
+    df.columns = df.columns.str.replace('-', '')
+    df = df.add_prefix('Overlap_')
+    df.loc[3] = df.sum()
+    df['category'] = ['gold', 'silver', 'bronze', 'total']
+    df = pd.wide_to_long(df, ['Overlap'], i='category', j='source', sep='_', suffix='(\d+|\w+)')
+    df = df.reset_index()
+    sns.set(rc={'figure.figsize': (14, 4)})
+    sns.barplot(data=df, x='source', y='Overlap', hue='category', hue_order=['total', 'gold', 'silver', 'bronze'])
 
-    plt.figure(figsize=(8, 6))
-    fig, ax = plt.subplots()
-
-    # Calculate the sums for each category
-    sums = np.sum(values, axis=0)
-
-    # Plot the stacked bars
-    bottom = np.zeros(len(labels))
-    for i in range(len(bar_categories)):
-        ax.bar(labels, values[i], bottom=bottom, label=bar_categories[i])
-        bottom += values[i]
-
-    # Place the sum values on top of each bar
-    for j, (label, value) in enumerate(zip(labels, sums)):
-        ax.text(j, bottom[j] + 1, f'{value:.1f}', ha='center', va='center')
-
-    ax.set_ylim(top=np.max(bottom) + 3)  # Increase the value (5) as needed
-
-    # Adding labels and title
-    ax.set_xlabel('Sources')
-    ax.set_ylabel('Overlap (in %)')
-    ax.set_title('Overlap DOMINE sources with predicted by category')
-
-    # Adding a legend
-    ax.legend()
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+    # plt.tight_layout()
+    # plt.xticks(rotation=45)
+    plt.xlabel("Sources")
+    plt.ylabel("Overlap (in %)")
+    plt.title("Overlap DOMINE sources with predicted by category")
 
     if save:
         plt.savefig('pictures/domine_comparison_category.png')
@@ -198,10 +182,11 @@ did_2022_clean = remove_unknown_domains(all_known_ids, did_2022)
 # domine_clean = filter_domine()
 
 # visualisation
-domine_pairwise_comparison_categories(predicted=inter_predicted_dict, domine=domine, save=True)
+# domine_pairwise_comparison_categories(predicted=inter_predicted_dict, domine=domine, save=True)
+domine_pairwise_comparison_categories(inter_predicted_dict, domine)
 
-did = {'did_2017': did_2017, 'did_2022': did_2022_clean, 'predicted': inter_predicted}
-domine['predicted'] = inter_predicted
+# did = {'did_2017': did_2017, 'did_2022': did_2022_clean, 'predicted': inter_predicted}
+# domine['predicted'] = inter_predicted
 # upset_plots(did, 'upset_did_comparison_count')
 # upset_plots(domine, 'upset_domine_comparison', min_subset_size=100)
 # venn_diagrams(did_2017, did_2022_clean, interactions_gold, domine_clean, category='gold')
