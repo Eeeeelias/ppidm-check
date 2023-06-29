@@ -82,13 +82,12 @@ def venn_diagrams(did_2017, did_2022, predicted, domine, category='gold'):
     venn2([set(domine), set(predicted)], set_labels=('domine', 'predicted'), ax=ax2)
 
     plt.suptitle(f'Overlap known new databases and predicted ({category}) interactions')
-    plt.savefig(f'overlap_domine_3did_{category}.png')
+    plt.savefig(f'pictures/overlap_domine_3did_{category}.png')
     plt.show()
 
 
 def upset_plots(unformatted_dict: dict, title='Generic UpsetPlot', min_subset_size=None):
     upset_format = from_contents(unformatted_dict)
-
     if min_subset_size:
         ax_dict = UpSet(upset_format, show_counts=True, min_subset_size=min_subset_size).plot()
     else:
@@ -97,7 +96,7 @@ def upset_plots(unformatted_dict: dict, title='Generic UpsetPlot', min_subset_si
     plt.show()
 
 
-def domine_pairwise_comparison(predicted: list[tuple[str, str]], domine: dict[list[tuple[str, str]]]):
+def domine_pairwise_comparison(predicted: list[tuple[str, str]], domine: dict[list[tuple[str, str]]], save=True):
     bold = '\033[1m'
     end = '\033[0m'
     overlap_relative_domine = {}
@@ -123,7 +122,8 @@ def domine_pairwise_comparison(predicted: list[tuple[str, str]], domine: dict[li
 
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig('pictures/domine_comparison.png')
+    if save:
+        plt.savefig('pictures/domine_comparison.png')
     plt.show()
 
 
@@ -143,11 +143,12 @@ did_2022_clean = remove_unknown_domains(all_known_ids, did_2022)
 # domine_clean = remove_unknown_domains(all_known_ids, domine)
 # domine_clean = filter_domine()
 
-domine_pairwise_comparison(predicted=inter_predicted, domine=domine)
 # visualisation
+domine_pairwise_comparison(predicted=inter_predicted, domine=domine, save=False)
+
 did = {'did_2017': did_2017, 'did_2022': did_2022_clean, 'predicted': inter_predicted}
 domine['predicted'] = inter_predicted
-# upset_plots(did, 'upset_did_comparison')
+# upset_plots(did, 'upset_did_comparison_count')
 # upset_plots(domine, 'upset_domine_comparison', min_subset_size=100)
 # venn_diagrams(did_2017, did_2022_clean, interactions_gold, domine_clean, category='gold')
 
