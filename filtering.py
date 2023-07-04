@@ -107,9 +107,9 @@ def create_wrong_assocations():
     common_factors = set()
     dom_common_factors = dict()
     all_interactions_DDI = set()
-    for source in ['source1_intact']:
-    # source in ['source1_intact', 'source2_mint', 'source3_dip', 'source4_biogrid', 'source5_string-exp',
-    #               'source5_string-rest', 'source6_sifts', 'source7_hprd']:
+    # for source in ['source1_intact']:
+    for source in ['source1_intact', 'source2_mint', 'source3_dip', 'source4_biogrid', 'source5_string-exp',
+                   'source5_string-rest', 'source6_sifts', 'source7_hprd']:
         file1 = open(result_address + source + 'pfam', 'r')
         # interaction_score = dict()
         for line in file1:

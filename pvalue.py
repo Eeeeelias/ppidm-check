@@ -76,6 +76,7 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
 
     file1 = open(result_address + 'pfam-pfam-interaction-calculated', 'r')
     # file1.readline()
+    c = 0
     for line in file1:
         lineSplit = line.rstrip().split("\t")
         dom1 = lineSplit[0]
@@ -112,6 +113,8 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
 
         if Kde == 0 or source_score == '0':
             final_result.write(str(dom1) + "\t" + str(dom2) + "\t" + str(AssocScore) + "\t" + "NA" + "\n")
+            print("writing:", c)
+            c += 1
             # print("-")
             continue
         Nlist = []
@@ -190,6 +193,8 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
         if p_value > 1:
             p_value = "1*"
         final_result.write(str(dom1) + "\t" + str(dom2) + "\t" + str(AssocScore) + "\t" + str(p_value) + "\n")
+        print("writing:", c)
+        c += 1
         continue
 
     final_result.close()

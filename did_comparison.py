@@ -1,7 +1,6 @@
 import pickle
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from matplotlib_venn import venn3, venn2
 from upsetplot import plot, from_contents, UpSet, from_memberships
@@ -22,8 +21,11 @@ def read_interactions(file: str):
     interactions = []
     with open(file, 'r') as f:
         for line in f.readlines():
+            if not line.startswith("PF"):
+                continue
             line = line.strip().split("\t")
-            interactions.append((line[0], line[1]))
+            assoc = (line[0], line[1]) if line[0] > line[1] else (line[1], line[0])
+            interactions.append(assoc)
     return interactions
 
 
@@ -167,8 +169,8 @@ def domine_pairwise_comparison_categories(predicted: dict[str, list[tuple[str, s
 # loading all files
 did_2022 = read_interactions('resultdata/3did_2022')
 did_2017 = read_interactions('resultdata/3did')
-# domine = read_interactions('resultdata/domine')
-domine = filter_domine_sources()
+domine = filter_domine()
+# domine = filter_domine_sources()
 interactions_gold = read_interactions('resultdata/interactions_gold')
 inter_silver = read_interactions("resultdata/interactions_silver")
 inter_bronze = read_interactions("resultdata/interactions_bronze")
@@ -176,30 +178,34 @@ inter_predicted = interactions_gold + inter_silver + inter_bronze
 inter_predicted_dict = {'gold': interactions_gold, 'silver': inter_silver, 'bronze': inter_bronze}
 all_known_ids = pickle.load(open('pickles/all_known_ids.pickle', 'rb'))
 
-# removing domains that were not known at the time of PPIDM
-did_2022_clean = remove_unknown_domains(all_known_ids, did_2022)
-# domine_clean = remove_unknown_domains(all_known_ids, domine)
-# domine_clean = filter_domine()
 
-# visualisation
-# domine_pairwise_comparison_categories(predicted=inter_predicted_dict, domine=domine, save=True)
-domine_pairwise_comparison_categories(inter_predicted_dict, domine)
+if __name__ == '__main__':
+    # removing domains that were not known at the time of PPIDM
+    did_2022_clean = remove_unknown_domains(all_known_ids, did_2022)
+    # domine_clean = remove_unknown_domains(all_known_ids, domine)
+    # domine_clean = filter_domine()
+    # domine_clean = domine
 
-# did = {'did_2017': did_2017, 'did_2022': did_2022_clean, 'predicted': inter_predicted}
-# domine['predicted'] = inter_predicted
-# upset_plots(did, 'upset_did_comparison_count')
-# upset_plots(domine, 'upset_domine_comparison', min_subset_size=100)
-# venn_diagrams(did_2017, did_2022_clean, interactions_gold, domine_clean, category='gold')
+    # visualisation
+    # domine_pairwise_comparison_categories(predicted=inter_predicted_dict, domine=domine, save=True)
+    # domine_pairwise_comparison_categories(inter_predicted_dict, domine)
+
+    # did = {'did_2017': did_2017, 'did_2022': did_2022_clean, 'predicted': inter_predicted}
+    # domine['predicted'] = inter_predicted
+    # upset_plots(did, 'upset_did_comparison_count')
+    # upset_plots(domine, 'upset_domine_comparison', min_subset_size=100)
+    # venn_diagrams(did_2017, did_2022_clean, inter_bronze, domine_clean, category='sth')
 
 
-# random info
+    # random info
 
-# print("overlap 3did_2022:", (1 - (len(set(did_2022) - set(did_2017) - set(inter_predicted)) /
-# len(set(did_2022) - set(did_2017)))) * 100, "%")
-# print("total predicted:", len(set(domine_clean) & set(inter_predicted)))
-# print("Length of interactions_gold:", len(inter_predicted))
-# print("Length of did_2022:", len(did_2022))
-# print("Length of did_2017:", len(did_2017))
-# print("Unique 2022:", len(set(did_2017) - set(did_2022)))
-# print("Interaction overlap gold and did_2017:", len(set(interactions_gold) & set(did_2017)))
-# print("Interaction overlap gold and did_2022:", len(set(interactions_gold) & set(did_2022)))
+    # print("overlap 3did_2022:", (1 - (len(set(did_2022) - set(did_2017) - set(inter_predicted)) /
+    # len(set(did_2022) - set(did_2017)))) * 100, "%")
+    # print(len(interactions_gold), len(inter_silver), len(inter_bronze))
+    # print("total predicted:", len(set(domine_clean) & set(inter_predicted)))
+    # print("Length of interactions_gold:", len(inter_predicted))
+    # print("Length of did_2022:", len(did_2022))
+    # print("Length of did_2017:", len(did_2017))
+    # print("Unique 2022:", len(set(did_2017) - set(did_2022)))
+    # print("Interaction overlap gold and did_2017:", len(set(interactions_gold) & set(did_2017)))
+    # print("Interaction overlap gold and did_2022:", len(set(interactions_gold) & set(did_2022)))
