@@ -66,7 +66,7 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
     start = datetime.datetime.now()
     print(f"SIMILARITY Calculator for {source} Interactions")
 
-    result = open(result_address + source + 'pfam', 'w')
+    result = open(result_address + source + 'pfam_ordered', 'w')
     file1 = open(source_address + source, 'r')
     each_interaction_seq_seq = dict()
     interaction_dict = dict()
@@ -115,7 +115,8 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
         subsets1 = list(subsets1)
         subsets2 = list(subsets2)
 
-        seq_seq = item1 + '_' + item2 if item1 < item2 else item2 + '_' + item1
+        # seq_seq = item1 + '_' + item2 if item1 < item2 else item2 + '_' + item1
+        seq_seq = item1 + '_' + item2
 
         for set1 in subsets1:
             for set2 in subsets2:
@@ -128,10 +129,11 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
                 for datum in set2:
                     interaction2 += datum + '_'
 
-                if interaction1 < interaction2:
-                    interaction = (interaction1[:-1], interaction2[:-1])
-                else:
-                    interaction = (interaction2[:-1], interaction1[:-1])
+                # if interaction1 < interaction2:
+                #     interaction = (interaction1[:-1], interaction2[:-1])
+                # else:
+                #     interaction = (interaction2[:-1], interaction1[:-1])
+                interaction = (interaction1[:-1], interaction2[:-1])
 
                 result.write(str(interaction[0]) + '\t' + seq_seq + '\t' + str(interaction[1]) + '\n')
 
@@ -155,6 +157,7 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
 
     file1.close()
     result.close()
+    return
 
     result_file = open(result_address + domain + '-' + domain + '-interaction-' + source[8:], 'w')
 

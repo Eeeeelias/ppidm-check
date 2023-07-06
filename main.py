@@ -12,11 +12,6 @@ import filtering
 import pvalue as pv
 
 
-def similarity_calculator_interaction_wrapper(args):
-    source, seqDom, seqpdbchain, pdbchainDom = args
-    pt.similarity_calculator_interaction(source, 'pfam', seqDom, seqpdbchain, pdbchainDom)
-
-
 if __name__ == '__main__':
     sources = ['source1_intact', 'source2_mint', 'source3_dip', 'source4_biogrid', 'source5_string-exp',
                'source5_string-rest', 'source6_sifts', 'source7_hprd']
@@ -24,11 +19,11 @@ if __name__ == '__main__':
     start = timeit.default_timer()
     # seqDom, seqpdbchain, pdbchainDom = pt.read_chain_dom()
     # pickle.dump((seqDom, seqpdbchain, pdbchainDom), open('seqDom_seqpdbchain_pdbchainDom.pickle', 'wb'))
-    # seqDom, seqpdbchain, pdbchainDom = pickle.load(open('pickles/seqDom_seqpdbchain_pdbchainDom.pickle', 'rb'))
+    seqDom, seqpdbchain, pdbchainDom = pickle.load(open('pickles/seqDom_seqpdbchain_pdbchainDom.pickle', 'rb'))
     # print("Loading files from pickle took:", round(timeit.default_timer() - start, 1), "seconds")
 
-    # for i in sources:
-    #      pt.similarity_calculator_interaction(i, 'pfam', seqDom, seqpdbchain, pdbchainDom)
+    for i in sources:
+         pt.similarity_calculator_interaction(i, 'pfam', seqDom, seqpdbchain, pdbchainDom)
     #
     # # sifts_reader_process('sifts', 'pfam')
     # ic3k.clean_3did_kbdock_domine_downloaded_files()

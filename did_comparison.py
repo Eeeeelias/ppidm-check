@@ -188,13 +188,12 @@ if __name__ == '__main__':
 
     # visualisation
     # domine_pairwise_comparison_categories(predicted=inter_predicted_dict, domine=domine, save=True)
-    # domine_pairwise_comparison_categories(inter_predicted_dict, domine)
 
     # did = {'did_2017': did_2017, 'did_2022': did_2022_clean, 'predicted': inter_predicted}
     # domine['predicted'] = inter_predicted
     # upset_plots(did, 'upset_did_comparison_count')
     # upset_plots(domine, 'upset_domine_comparison', min_subset_size=100)
-    # venn_diagrams(did_2017, did_2022_clean, inter_bronze, domine_clean, category='sth')
+    # venn_diagrams(did_2017, did_2022_clean, interactions_gold, domine, category='gold')
 
 
     # random info

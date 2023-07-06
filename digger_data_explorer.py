@@ -5,12 +5,13 @@ import mygene
 
 from did_comparison import read_interactions, domine, did_2022, did_2017, inter_predicted
 
-# gid2name = pickle.load(open('data_digger/gid2name.pkl', 'rb'))
+gid2name = pickle.load(open('data_digger/gid2name.pkl', 'rb'))
 
 
 def load_graph(file_path: str):
     with open(file_path, 'rb') as g:
         ddi_G = pickle.load(g)
+        print(ddi_G)
     ddi_set = set((e[0], e[1]) if e[0] < e[1] else (e[1], e[0]) for e in ddi_G.edges)
     return ddi_set
 
