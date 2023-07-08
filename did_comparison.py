@@ -17,14 +17,19 @@ def sort_dict(dictionary: dict):
     return {k: v for k, v in sorted(dictionary.items(), key=lambda item: item[1], reverse=True)}
 
 
-def read_interactions(file: str):
+def read_interactions(file: str, third_col='all'):
     interactions = []
+    header = False
     with open(file, 'r') as f:
         for line in f.readlines():
-            if not line.startswith("PF"):
+            if not header:
+                header = True
                 continue
             line = line.strip().split("\t")
-            assoc = (line[0], line[1]) if line[0] > line[1] else (line[1], line[0])
+            if third_col != 'all':
+                if third_col != line[2]:
+                    continue
+            assoc = (line[0], line[1]) if line[0] < line[1] else (line[1], line[0])
             interactions.append(assoc)
     return interactions
 
