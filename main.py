@@ -22,8 +22,8 @@ if __name__ == '__main__':
     seqDom, seqpdbchain, pdbchainDom = pickle.load(open('pickles/seqDom_seqpdbchain_pdbchainDom.pickle', 'rb'))
     # print("Loading files from pickle took:", round(timeit.default_timer() - start, 1), "seconds")
 
-    for i in sources:
-         pt.similarity_calculator_interaction(i, 'pfam', seqDom, seqpdbchain, pdbchainDom)
+    # for i in sources:
+    #      pt.similarity_calculator_interaction(i, 'pfam', seqDom, seqpdbchain, pdbchainDom)
     #
     # # sifts_reader_process('sifts', 'pfam')
     # ic3k.clean_3did_kbdock_domine_downloaded_files()

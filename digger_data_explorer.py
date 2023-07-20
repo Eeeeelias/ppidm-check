@@ -18,9 +18,9 @@ def load_graph(file_path: str, ppi_ddi=False):
 
 
 def entrez_to_name_online(entrezID):
-     mg = mygene.MyGeneInfo()
-     out = mg.querymany(entrezID, scopes='entrezgene', fields='symbol', species='human')
-     return out
+    mg = mygene.MyGeneInfo()
+    out = mg.querymany(entrezID, scopes='entrezgene', fields='symbol', species='human')
+    return out
 
 
 def export_table(file_path):
@@ -54,9 +54,9 @@ if __name__ == '__main__':
     ext_graph = nx.Graph(ddi_ppi_set)
     print(ext_graph)
     # pickle.dump(ext_graph, open("data_digger/DomainG_extended.pkl", 'wb'))
-    # Gold: 384737
-    # Silver: 109185
-    # Bronze: 565520
+    # Gold: 384.737
+    # Silver: 109.185
+    # Bronze: 565.520
 
     # extending the DDI graph
     ddi_set = load_graph('data_digger/DDI.pkl')
@@ -67,4 +67,3 @@ if __name__ == '__main__':
     print(ext_ddi_graph)
     # pickle.dump(ext_ddi_graph, open("data_digger/DDI_extended.pkl", 'wb'))
     interaction = ('PF00640', 'PF07714')
-
