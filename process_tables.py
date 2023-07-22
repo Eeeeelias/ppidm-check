@@ -86,26 +86,27 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
         if item1 in seqDom and item2 in seqDom:
             domains1: list = seqDom[item1]
             domains2: list = seqDom[item2]
-            if item1 in seqpdbchain and item2 in seqpdbchain:
-                pdbchains1 = seqpdbchain[item1]
-                pdbchains2 = seqpdbchain[item2]
-                for pc in pdbchains1:
-                    domains1 = domains1 + pdbchainDom[pc]
-                for pc in pdbchains2:
-                    domains2 = domains2 + pdbchainDom[pc]
+            # if item1 in seqpdbchain and item2 in seqpdbchain:
+            #     pdbchains1 = seqpdbchain[item1]
+            #     pdbchains2 = seqpdbchain[item2]
+            #     for pc in pdbchains1:
+            #         domains1 = domains1 + pdbchainDom[pc]
+            #     for pc in pdbchains2:
+            #         domains2 = domains2 + pdbchainDom[pc]
 
 
         else:
-            if item1 in seqpdbchain and item2 in seqpdbchain:
-                pdbchains1 = seqpdbchain[item1]
-                pdbchains2 = seqpdbchain[item2]
-                for pc in pdbchains1:
-                    domains1 = domains1 + pdbchainDom[pc]
-                for pc in pdbchains2:
-                    domains2 = domains2 + pdbchainDom[pc]
-
-            else:
-                continue
+            continue
+            # if item1 in seqpdbchain and item2 in seqpdbchain:
+            #     pdbchains1 = seqpdbchain[item1]
+            #     pdbchains2 = seqpdbchain[item2]
+            #     for pc in pdbchains1:
+            #         domains1 = domains1 + pdbchainDom[pc]
+            #     for pc in pdbchains2:
+            #         domains2 = domains2 + pdbchainDom[pc]
+            #
+            # else:
+            #     continue
 
         domains1 = list(set(domains1))
         domains2 = list(set(domains2))
