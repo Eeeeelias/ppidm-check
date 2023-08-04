@@ -86,27 +86,28 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
         if item1 in seqDom and item2 in seqDom:
             domains1: list = seqDom[item1]
             domains2: list = seqDom[item2]
-            # if item1 in seqpdbchain and item2 in seqpdbchain:
-            #     pdbchains1 = seqpdbchain[item1]
-            #     pdbchains2 = seqpdbchain[item2]
-            #     for pc in pdbchains1:
-            #         domains1 = domains1 + pdbchainDom[pc]
-            #     for pc in pdbchains2:
-            #         domains2 = domains2 + pdbchainDom[pc]
+            # comment out the lines below for the ordered data
+            if item1 in seqpdbchain and item2 in seqpdbchain:
+                pdbchains1 = seqpdbchain[item1]
+                pdbchains2 = seqpdbchain[item2]
+                for pc in pdbchains1:
+                    domains1 = domains1 + pdbchainDom[pc]
+                for pc in pdbchains2:
+                    domains2 = domains2 + pdbchainDom[pc]
 
 
         else:
-            continue
-            # if item1 in seqpdbchain and item2 in seqpdbchain:
-            #     pdbchains1 = seqpdbchain[item1]
-            #     pdbchains2 = seqpdbchain[item2]
-            #     for pc in pdbchains1:
-            #         domains1 = domains1 + pdbchainDom[pc]
-            #     for pc in pdbchains2:
-            #         domains2 = domains2 + pdbchainDom[pc]
-            #
-            # else:
-            #     continue
+            # comment out the lines below for the ordered data
+            if item1 in seqpdbchain and item2 in seqpdbchain:
+                pdbchains1 = seqpdbchain[item1]
+                pdbchains2 = seqpdbchain[item2]
+                for pc in pdbchains1:
+                    domains1 = domains1 + pdbchainDom[pc]
+                for pc in pdbchains2:
+                    domains2 = domains2 + pdbchainDom[pc]
+
+            else:
+                continue
 
         domains1 = list(set(domains1))
         domains2 = list(set(domains2))
@@ -130,11 +131,12 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
                 for datum in set2:
                     interaction2 += datum + '_'
 
-                # if interaction1 < interaction2:
-                #     interaction = (interaction1[:-1], interaction2[:-1])
-                # else:
-                #     interaction = (interaction2[:-1], interaction1[:-1])
-                interaction = (interaction1[:-1], interaction2[:-1])
+                # change this to have it in domain_protein ordering instead of <
+                # interaction = (interaction1[:-1], interaction2[:-1])
+                if interaction1 < interaction2:
+                    interaction = (interaction1[:-1], interaction2[:-1])
+                else:
+                    interaction = (interaction2[:-1], interaction1[:-1])
 
                 result.write(str(interaction[0]) + '\t' + seq_seq + '\t' + str(interaction[1]) + '\n')
 
@@ -158,7 +160,8 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
 
     file1.close()
     result.close()
-    return
+    # returning here if you want to make the ordered data
+    # return
 
     result_file = open(result_address + domain + '-' + domain + '-interaction-' + source[8:], 'w')
 

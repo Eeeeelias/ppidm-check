@@ -29,16 +29,16 @@ def identified_pathways(enriched):
               sep="")
 
 
-pathway_hierarchy = read_pathways('data_nease/ReactomePathwaysRelation.txt')
-pathway_names = {key: val for key, val in read_pathways('data_nease/ReactomePathways.txt')}
+pathway_hierarchy = read_pathways('../data_nease/ReactomePathwaysRelation.txt')
+pathway_names = {key: val for key, val in read_pathways('../data_nease/ReactomePathways.txt')}
 
 head_pathways = set([a[0] for a in pathway_hierarchy]) - set([a[1] for a in pathway_hierarchy])
 print("Top pathways:", len(head_pathways))
 lowest_pathways = set([a[1] for a in pathway_hierarchy]) - set([a[0] for a in pathway_hierarchy])
 print("Bottom pathways:", len(lowest_pathways))
 
-enr_ext: pd.DataFrame = pickle.load(open('data_nease/nease_enr_ext.pkl', 'rb'))
-enr_org: pd.DataFrame = pickle.load(open('data_nease/nease_enr_org.pkl', 'rb'))
+enr_ext: pd.DataFrame = pickle.load(open('../data_nease/nease_enr_ext.pkl', 'rb'))
+enr_org: pd.DataFrame = pickle.load(open('../data_nease/nease_enr_org.pkl', 'rb'))
 cutoff = 0.05
 
 enr_ext = enr_ext.loc[enr_ext['adj p_value'] <= cutoff]

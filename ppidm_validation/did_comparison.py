@@ -3,10 +3,9 @@ import pickle
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib_venn import venn3, venn2
-from upsetplot import plot, from_contents, UpSet, from_memberships
-import itertools
+from upsetplot import from_contents, UpSet
 import seaborn as sns
-from main import source_address
+from ppidm_run.main import source_address
 
 plt.style.use('ggplot')
 
@@ -172,16 +171,16 @@ def domine_pairwise_comparison_categories(predicted: dict[str, list[tuple[str, s
 
 
 # loading all files
-did_2022 = read_interactions('resultdata/3did_2022')
-did_2017 = read_interactions('resultdata/3did')
+did_2022 = read_interactions('../resultdata/3did_2022')
+did_2017 = read_interactions('../resultdata/3did')
 domine = filter_domine()
 # domine = filter_domine_sources()
-interactions_gold = read_interactions('resultdata/interactions_gold')
-inter_silver = read_interactions("resultdata/interactions_silver")
-inter_bronze = read_interactions("resultdata/interactions_bronze")
+interactions_gold = read_interactions('../resultdata/interactions_gold')
+inter_silver = read_interactions("../resultdata/interactions_silver")
+inter_bronze = read_interactions("../resultdata/interactions_bronze")
 inter_predicted = interactions_gold + inter_silver + inter_bronze
 inter_predicted_dict = {'gold': interactions_gold, 'silver': inter_silver, 'bronze': inter_bronze}
-all_known_ids = pickle.load(open('pickles/all_known_ids.pickle', 'rb'))
+all_known_ids = pickle.load(open('../pickles/all_known_ids.pickle', 'rb'))
 
 
 if __name__ == '__main__':

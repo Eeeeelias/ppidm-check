@@ -2,8 +2,8 @@ import pickle
 import sys
 import timeit
 
-result_address = 'resultdata/'
-source_address = 'sourcedata/'
+result_address = '../resultdata/'
+source_address = '../sourcedata/'
 
 
 import interaction_clear_3did_kbdock as ic3k
@@ -18,8 +18,8 @@ if __name__ == '__main__':
 
     start = timeit.default_timer()
     # seqDom, seqpdbchain, pdbchainDom = pt.read_chain_dom()
-    # pickle.dump((seqDom, seqpdbchain, pdbchainDom), open('seqDom_seqpdbchain_pdbchainDom.pickle', 'wb'))
-    seqDom, seqpdbchain, pdbchainDom = pickle.load(open('pickles/seqDom_seqpdbchain_pdbchainDom.pickle', 'rb'))
+    # pickle.dump((seqDom, seqpdbchain, pdbchainDom), open('../pickles/seqDom_seqpdbchain_pdbchainDom.pickle', 'wb'))
+    seqDom, seqpdbchain, pdbchainDom = pickle.load(open('../pickles/seqDom_seqpdbchain_pdbchainDom.pickle', 'rb'))
     # print("Loading files from pickle took:", round(timeit.default_timer() - start, 1), "seconds")
 
     # for i in sources:

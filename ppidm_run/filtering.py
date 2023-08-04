@@ -84,7 +84,7 @@ def extract_info(relevant_pfams: set, score_info: dict):
             result[pfam_id] = score_info[pfam_id]
         except KeyError:
             result[pfam_id] = 0
-    pickle.dump(result, open('pickles/info_scores.pickle', 'wb'))
+    pickle.dump(result, open('../pickles/info_scores.pickle', 'wb'))
     print("Wrote scores to pickle")
 
 

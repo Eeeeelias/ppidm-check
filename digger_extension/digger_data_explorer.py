@@ -1,11 +1,10 @@
 import pickle
 import networkx as nx
-import pandas as pd
 import mygene
 
-from did_comparison import read_interactions, domine, did_2022, did_2017, inter_predicted
+from ppidm_validation.did_comparison import read_interactions, inter_predicted
 
-gid2name = pickle.load(open('data_digger/gid2name.pkl', 'rb'))
+gid2name = pickle.load(open('../data_digger/gid2name.pkl', 'rb'))
 
 
 def load_graph(file_path: str, ppi_ddi=False):
@@ -34,7 +33,7 @@ def export_table(file_path):
 
 if __name__ == '__main__':
     # load ddi/ppi graph and add new domains to DomainG.pkl
-    ddi_ppi_set = load_graph('data_digger/DomainG.pkl', ppi_ddi=True)
+    ddi_ppi_set = load_graph('../data_digger/DomainG.pkl', ppi_ddi=True)
     domains_int = set()
     for d1, d2 in ddi_ppi_set:
         domain1 = d1.split("/")[1]
@@ -44,7 +43,7 @@ if __name__ == '__main__':
     # print(entrez_to_name_online('6874'))
     # export_table("data_digger/DomainG.pkl_interactions")
 
-    ddi_predicted = read_interactions('predicted_ddi_ppi.tsv.tsv', third_col='all')
+    ddi_predicted = read_interactions('../predicted_ddi_ppi.tsv.tsv', third_col='all')
     print("Predicted PPI/DDI interactions:", len(set(ddi_predicted)))
     for ddi in ddi_predicted:
         ddi_ppi_set.add(ddi)
@@ -59,7 +58,7 @@ if __name__ == '__main__':
     # Bronze: 565.520
 
     # extending the DDI graph
-    ddi_set = load_graph('data_digger/DDI.pkl')
+    ddi_set = load_graph('../data_digger/DDI.pkl')
     print(list(set(inter_predicted) - set(ddi_set))[:5])
     for interaction in inter_predicted:
         ddi_set.add(interaction)

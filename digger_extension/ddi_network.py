@@ -1,16 +1,8 @@
-import cProfile
-import glob
 import multiprocessing
-import pickle
-import pstats
 import re
-import threading
 import timeit
 
-from tqdm import tqdm
-
-from did_comparison import inter_predicted
-import networkx as nx
+from ppidm_validation.did_comparison import inter_predicted
 import pandas as pd
 
 
@@ -106,7 +98,7 @@ def add_classification(file_path: str, classifications_info: str):
 #         g.add_edge(parts[0], parts[1])
 
 
-mart_table = pd.read_csv('sourcedata/mart_export.txt', sep='\t', dtype={'Gene stable ID': str,
+mart_table = pd.read_csv('../sourcedata/mart_export.txt', sep='\t', dtype={'Gene stable ID': str,
                                                                         'UniProtKB/Swiss-Prot ID': str,
                                                                         'NCBI gene (formerly Entrezgene) ID': str})
 mart_table.rename(columns={'Gene stable ID': 'GeneID', 'UniProtKB/Swiss-Prot ID': 'UniProtID',
@@ -141,5 +133,5 @@ def write_ddi_ppi_connection():
 
 if __name__ == '__main__':
     # write_ddi_ppi_connection()
-    read_protein_interactions("resultdata/source3_dippfam_ordered", inter_predicted, mart_table)
+    read_protein_interactions("../resultdata/source3_dippfam_ordered", inter_predicted, mart_table)
     # add_classification("predicted_ddi_ppi.tsv", "resultdata/result-all")
