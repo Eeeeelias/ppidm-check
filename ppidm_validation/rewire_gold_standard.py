@@ -80,5 +80,5 @@ if __name__ == '__main__':
     plt.title('Retaining node degree of the random network')
 
     # Displaying the plot
-    plt.savefig("pictures/expected_node_degree.png")
+    plt.savefig("../pictures/expected_node_degree.png")
     plt.show()

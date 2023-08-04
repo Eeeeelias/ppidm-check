@@ -65,4 +65,3 @@ if __name__ == '__main__':
     ext_ddi_graph = nx.Graph(ddi_set)
     print(ext_ddi_graph)
     # pickle.dump(ext_ddi_graph, open("data_digger/DDI_extended.pkl", 'wb'))
-    interaction = ('PF00640', 'PF07714')

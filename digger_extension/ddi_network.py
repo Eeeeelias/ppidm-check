@@ -132,6 +132,6 @@ def write_ddi_ppi_connection():
 
 
 if __name__ == '__main__':
-    # write_ddi_ppi_connection()
-    read_protein_interactions("../resultdata/source3_dippfam_ordered", inter_predicted, mart_table)
-    # add_classification("predicted_ddi_ppi.tsv", "resultdata/result-all")
+    write_ddi_ppi_connection()
+    # read_protein_interactions("../resultdata/source3_dippfam_ordered", inter_predicted, mart_table)
+    add_classification("predicted_ddi_ppi.tsv", "../resultdata/result-all")

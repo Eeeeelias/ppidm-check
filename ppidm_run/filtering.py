@@ -268,9 +268,10 @@ def assign_interaction():
     train_set = random.sample(gold_standard, int(len(gold_standard) / 2))
     # train_set = pickle.load(open('pickles/random_train.pickle', 'rb'))
 
-    # test set can't be gold_std - train since train is random. test will now be half of gold_std
+    test_set = gold_standard - set(train_set)
+    # rewired test set can't be gold_std - train since train is random. test will now be half of gold_std
     # test_set = gold_standard - set(random.sample(gold_standard, int(len(gold_standard) / 2)))
-    test_set = random.sample(gold_standard, int(len(gold_standard) / 2))
+    # test_set = random.sample(gold_standard, int(len(gold_standard) / 2))
     # gold_standard = pickle.load(open('pickles/random_gold.pickle', 'rb'))
     print("Length of gold standard:", len(gold_standard))
     print("Length of train set:", len(train_set))
@@ -471,7 +472,8 @@ def assign_interaction():
         count_for_train_negative = 0
         count_for_test_negative = 0
         count_all_found = 0
-        # Check the training set of interpro and see whether interproTrain association is found or not AND they are more than THRESHOLD SCORE
+        # Check the training set of interpro and see whether interproTrain association is found or not AND they are more
+        # than THRESHOLD SCORE
         for datum in train_set:
             interaction = datum
             score = 0
