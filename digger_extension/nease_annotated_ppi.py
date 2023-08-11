@@ -1,5 +1,6 @@
 import pickle
 import networkx as nx
+import numpy as np
 import pandas as pd
 
 path = "D:/programming/bachelor_projects/NEASE/nease/data"
@@ -9,35 +10,80 @@ print("PPIs:", ppi_graph)
 ppis = [(i, j) if i < j else (j, i) for i, j in ppi_graph.edges]
 
 
+def combine_uniprot_mappings():
+    # Read UniProt to Entrez mapping
+    gene_id_mapping = pd.read_csv("../data_nease/HUMAN_9606_idmapping_GeneIDs.dat", sep="\t", header=None)
+    gene_id_mapping.columns = ['UniProtID', 'GeneID', 'EntrezID']
+    gene_id_mapping['EntrezID'] = gene_id_mapping['EntrezID'].astype(str)
+    id_mapping = gene_id_mapping.set_index('UniProtID')['EntrezID'].to_dict()
+
+    # Read UniProt to Ensembl mapping
+    ensembl_info = pd.read_csv("../data_nease/uniprot_ensembl_mapping.tsv", sep="\t", header=None)
+    ensembl_info.columns = ['UniProtID', 'Ensembl', 'EnsemblID']
+    ensembl_mapping = ensembl_info.set_index('UniProtID')['EnsemblID'].to_dict()
+
+    # Read Ensembl to Entrez mapping
+    mart_info = pd.read_csv("../sourcedata/mart_export.txt", sep="\t",
+                            dtype={'Gene stable ID': str, 'UniProtKB/Swiss-Prot ID': str,
+                                   'NCBI gene (formerly Entrezgene) ID': str})
+    mart_mapping = mart_info.set_index('Gene stable ID')['NCBI gene (formerly Entrezgene) ID'].to_dict()
+    mart_mapping_entrez = mart_info.set_index('UniProtKB/Swiss-Prot ID')['NCBI gene (formerly Entrezgene) ID'].to_dict()
+    mart_mapping_entrez.update(id_mapping)
+    id_mapping = mart_mapping_entrez
+
+    for i, j in ensembl_mapping.items():
+        # skip most of this
+        if id_mapping.get(i) is not None:
+            continue
+
+        ens_map = mart_mapping.get(j)
+        # skip if no ensembl map can be found
+        if ens_map is None:
+            continue
+        id_mapping[i] = ens_map
+
+    tmp_mapping = dict()
+    for i, j in id_mapping.items():
+        if type(j) != str:
+            continue
+        tmp_mapping[i] = j
+
+    return tmp_mapping
+
+
 def extract_pdb_supported_ppis():
+    # Read protein interactions data
+    # download the id mapping and extract the necessary geneIds like so:
+    # cat PPI_table_proteome_95_seq_id.tsv | cut -d$'\t' -f1,6 | sed 's/-[0-9]//g' | sort -r | uniq >
+    # PPI_table_clean.tsv
     pdb_info = pd.read_csv("../data_nease/PPI_table_clean.tsv", sep="\t")
-    df = pd.read_csv("../data_nease/HUMAN_9606_idmapping_GeneIDs.dat", sep="\t", header=None)
-    df.columns = ['UniProtID', "GeneID", "EntrezID"]
-    id_mapping = df.set_index('UniProtID')['EntrezID'].to_dict()
-    # mart_info = pd.read_csv("../sourcedata/mart_export.txt", sep="\t")
-    # id_mapping = mart_info.set_index('UniProtKB/Swiss-Prot ID')['NCBI gene (formerly Entrezgene) ID'].to_dict()
+    id_mapping = combine_uniprot_mappings()
 
-    print("Proteins mapped to entrez IDs:", len(id_mapping))
-    orig_interactions = set()
     interactions = set()
-    key_errors = 0
-    for idx, row in pdb_info.iterrows():
-        try:
-            orig_interactions.add((row['u_ac_1'], row['u_ac_2']))
-            # get entrez id of uniprot protein
-            gene1 = str(id_mapping.get(row['u_ac_1']))
-            gene2 = str(id_mapping.get(row['u_ac_2']))
-        except KeyError:
-            key_errors += 1
-            continue
-        if gene1 == 'None' or gene2 == 'None':
-            continue
-        # add it in sorted order, so it's easier to compare later
-        interactions.add((gene1, gene2)) # if gene1 < gene2 else interactions.add((gene2, gene1))
+    interactions_n_r = set()
+    nones = 0
 
-    print("Key errors:", key_errors)
-    # write it to a file
+    for _, row in pdb_info.iterrows():
+        try:
+            gene1 = id_mapping.get(row['u_ac_1'])
+            gene2 = id_mapping.get(row['u_ac_2'])
+        except KeyError:
+            continue
+
+        if gene1 is None or gene2 is None:
+            nones += 1
+            continue
+
+        interactions.add((gene1, gene2))
+        gene1, gene2 = sorted([gene1, gene2])
+        interactions_n_r.add((gene1, gene2))
+
+    print("Proteins mapped to Entrez IDs:", len(id_mapping))
+    print("Interactions not mapped:", nones)
     print("PDB interactions:", len(interactions))
+    print("PDB non-redundant interactions:", len(interactions_n_r))
+
+    # Write interactions to a file
     with open("../residue_supported_interactions.tsv", 'w') as f:
         for i, j in interactions:
             f.write(f"{i}\t{j}\n")
@@ -72,10 +118,7 @@ def filter_by_pdb(pdb_path):
         for line in f:
             split = line.strip().split("\t")
             pdb_db.add((split[0], split[1]))
-    pdb_db_reversed = pdb_db
-    for i, j in pdb_db:
-        pdb_db_reversed.add((j, i))
-    filtered = set(ppis) & pdb_db_reversed
+    filtered = set(ppis) & pdb_db
     print(f"{len(filtered):,} interactions supported by PDB")
     return list(filtered)
 
