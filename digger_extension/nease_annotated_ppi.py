@@ -1,6 +1,7 @@
 import pickle
+
+import mygene
 import networkx as nx
-import numpy as np
 import pandas as pd
 
 path = "D:/programming/bachelor_projects/NEASE/nease/data"
@@ -10,82 +11,47 @@ print("PPIs:", ppi_graph)
 ppis = [(i, j) if i < j else (j, i) for i, j in ppi_graph.edges]
 
 
-def combine_uniprot_mappings():
-    # Read UniProt to Entrez mapping
-    gene_id_mapping = pd.read_csv("../data_nease/HUMAN_9606_idmapping_GeneIDs.dat", sep="\t", header=None)
-    gene_id_mapping.columns = ['UniProtID', 'GeneID', 'EntrezID']
-    gene_id_mapping['EntrezID'] = gene_id_mapping['EntrezID'].astype(str)
-    id_mapping = gene_id_mapping.set_index('UniProtID')['EntrezID'].to_dict()
+def name_to_entrez(gene, mapping):
+    try:
+        name = mapping[mapping['Gene name'] == str(gene)]['NCBI gene ID'].unique()
 
-    # Read UniProt to Ensembl mapping
-    ensembl_info = pd.read_csv("../data_nease/uniprot_ensembl_mapping.tsv", sep="\t", header=None)
-    ensembl_info.columns = ['UniProtID', 'Ensembl', 'EnsemblID']
-    ensembl_mapping = ensembl_info.set_index('UniProtID')['EnsemblID'].to_dict()
+        if len(name) == 0:
+            # try to convert it online
+            mg = mygene.MyGeneInfo()
+            out = mg.query(f"symbol:{gene}", fields='entrezgene', species="human")
+            return out['hits'][0]['_id']
 
-    # Read Ensembl to Entrez mapping
-    mart_info = pd.read_csv("../sourcedata/mart_export.txt", sep="\t",
-                            dtype={'Gene stable ID': str, 'UniProtKB/Swiss-Prot ID': str,
-                                   'NCBI gene (formerly Entrezgene) ID': str})
-    mart_mapping = mart_info.set_index('Gene stable ID')['NCBI gene (formerly Entrezgene) ID'].to_dict()
-    mart_mapping_entrez = mart_info.set_index('UniProtKB/Swiss-Prot ID')['NCBI gene (formerly Entrezgene) ID'].to_dict()
-    mart_mapping_entrez.update(id_mapping)
-    id_mapping = mart_mapping_entrez
-
-    for i, j in ensembl_mapping.items():
-        # skip most of this
-        if id_mapping.get(i) is not None:
-            continue
-
-        ens_map = mart_mapping.get(j)
-        # skip if no ensembl map can be found
-        if ens_map is None:
-            continue
-        id_mapping[i] = ens_map
-
-    tmp_mapping = dict()
-    for i, j in id_mapping.items():
-        if type(j) != str:
-            continue
-        tmp_mapping[i] = j
-
-    return tmp_mapping
+        return name[0]
+    except:
+        return None
 
 
-def extract_pdb_supported_ppis():
-    # Read protein interactions data
-    # download the id mapping and extract the necessary geneIds like so:
-    # cat PPI_table_proteome_95_seq_id.tsv | cut -d$'\t' -f1,6 | sed 's/-[0-9]//g' | sort -r | uniq >
-    # PPI_table_clean.tsv
-    pdb_info = pd.read_csv("../data_nease/PPI_table_clean.tsv", sep="\t")
-    id_mapping = combine_uniprot_mappings()
+def extract_pdb_interactions():
+    pdb = pickle.load(open("D:\programming\\bachelor_projects\\NEASE\\nease\data\database\pdb", 'rb'))
+    human = pickle.load(open("D:\\programming\\bachelor_projects\\NEASE\\nease\\data\\database\\Human", 'rb'))
+
+    # mapping_dict = {gene: name_to_entrez(gene, human) for gene in pdb['symbol'].unique()}
+    # pickle.dump(mapping_dict, open("../tmp_mapping_dict.pkl", 'wb'))
+
+    mapping_dict = pickle.load(open("../tmp_mapping_dict.pkl", 'rb'))
 
     interactions = set()
-    interactions_n_r = set()
-    nones = 0
-
-    for _, row in pdb_info.iterrows():
-        try:
-            gene1 = id_mapping.get(row['u_ac_1'])
-            gene2 = id_mapping.get(row['u_ac_2'])
-        except KeyError:
+    for _, row in pdb.iterrows():
+        entrez_retrieved = mapping_dict.get(row['symbol'])
+        if entrez_retrieved is None or str(row['entrezgene']) == 'nan':
             continue
+        interactions.add((str(entrez_retrieved), str(row['entrezgene'])))
 
-        if gene1 is None or gene2 is None:
-            nones += 1
-            continue
+    print(len(interactions))
+    G = nx.Graph(interactions)
+    print(G)
 
-        interactions.add((gene1, gene2))
-        gene1, gene2 = sorted([gene1, gene2])
-        interactions_n_r.add((gene1, gene2))
+    interaction_set = set()
+    for i, j in interactions:
+        interaction_set.add((i, j)) if i < j else interaction_set.add((j, i))
 
-    print("Proteins mapped to Entrez IDs:", len(id_mapping))
-    print("Interactions not mapped:", nones)
-    print("PDB interactions:", len(interactions))
-    print("PDB non-redundant interactions:", len(interactions_n_r))
-
-    # Write interactions to a file
-    with open("../residue_supported_interactions.tsv", 'w') as f:
-        for i, j in interactions:
+    with open("residue_supported_interactions.tsv", 'w') as f:
+        for i, j in interaction_set:
             f.write(f"{i}\t{j}\n")
 
 
@@ -157,16 +123,17 @@ def combine_exon_residue_interactions(exon_level: str, residue_level: str):
 
 
 if __name__ == '__main__':
-    extract_pdb_supported_ppis()
-    ppis_filtered = filter_by_ddi(path + "/network/graph_human_old.pkl")
+    # extract_pdb_interactions()
+    ppis_filtered = filter_by_ddi(path + "/network/graph_human_ext.pkl")
     ppis_filtered += filter_by_elm(path + "/database/ELM_interactions")
     ppis_filtered += filter_by_pdb("../residue_supported_interactions.tsv")
-    pathways = pickle.load(open(path + "/pathways/pathways_human", 'rb'))
     filtered_graph = nx.Graph(ppis_filtered)
     print("PPI graph supported by DDI/ELM/PDB:", filtered_graph)
-    # new_degrees = pathway_degree(pathways, filtered_graph)
-    # # pathways['Degree in the PPI/DDI_old'] = pathways['Degree in the PPI/DDI']
-    # # pathways['Degree in the structural PPI_old'] = pathways['Degree in the structural PPI']
-    # pathways['Degree in the structural PPI'] = new_degrees
-    # pickle.dump(pathways, open(path + "/pathways/pathways_human", 'wb'))
+
+    pathways = pickle.load(open(path + "/pathways/pathways_human", 'rb'))
+    new_degrees = pathway_degree(pathways, filtered_graph)
+    # pathways['Degree in the PPI/DDI_old'] = pathways['Degree in the PPI/DDI']
+    # pathways['Degree in the structural PPI_old'] = pathways['Degree in the structural PPI']
+    pathways['Degree in the structural PPI'] = new_degrees
+    pickle.dump(pathways, open(path + "/pathways/pathways_human", 'wb'))
 
