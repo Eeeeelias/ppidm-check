@@ -6,10 +6,10 @@ result_address = '../resultdata/'
 source_address = '../sourcedata/'
 
 
-import interaction_clear_3did_kbdock as ic3k
-import process_tables as pt
-import filtering
-import pvalue as pv
+import ppidm_run.interaction_clear_3did_kbdock as ic3k
+import ppidm_run.process_tables as pt
+import ppidm_run.filtering
+import ppidm_run.pvalue as pv
 
 
 if __name__ == '__main__':

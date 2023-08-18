@@ -3,6 +3,7 @@ import pickle
 import mygene
 import networkx as nx
 import pandas as pd
+import rewire_domain_g_ext as rg
 
 path = "D:/programming/bachelor_projects/NEASE/nease/data"
 
@@ -62,6 +63,7 @@ def filter_by_ddi(ddi_path):
     ddis = [(i.split("/")[0], j.split("/")[0]) if i.split("/")[0] < j.split("/")[0] else
             (j.split("/")[0], i.split("/")[0]) for i, j in ddi_graph.edges]
 
+
     filtered = set(ddis) & set(ppis)
     print(f"{len(filtered):,} interactions supported by DDI")
     return list(filtered)
@@ -102,38 +104,21 @@ def pathway_degree(pathways: pd.DataFrame, ppi_ddi_graph: nx.Graph):
     return new_degrees
 
 
-def combine_exon_residue_interactions(exon_level: str, residue_level: str):
-    exon_interactions = set()
-    residue_interactions = set()
-
-    with open(exon_level, 'r') as f:
-        for line in f.readlines():
-            el1 = line.split("\t")[0]
-            el2 = line.split("\t")[1].strip()
-            exon_interactions.add((el1, el2))
-    with open(residue_level, 'r') as f:
-        for line in f.readlines():
-            el1 = line.split("\t")[0]
-            el2 = line.split("\t")[1].strip()
-            residue_interactions.add((el1, el2))
-
-    print("Exon level interactions:", len(exon_interactions))
-    print("Residue level interactions:", len(residue_interactions))
-    print("Combined:", len(exon_interactions | residue_interactions))
-
-
 if __name__ == '__main__':
+    extended_graph = "C:\\Users\\gooog\\miniconda3\\Lib\\site-packages\\nease\\data\\network\\graph_human_ext.pkl"
     # extract_pdb_interactions()
-    ppis_filtered = filter_by_ddi(path + "/network/graph_human_ext.pkl")
+    ppis_filtered = filter_by_ddi(extended_graph)
     ppis_filtered += filter_by_elm(path + "/database/ELM_interactions")
     ppis_filtered += filter_by_pdb("../residue_supported_interactions.tsv")
     filtered_graph = nx.Graph(ppis_filtered)
     print("PPI graph supported by DDI/ELM/PDB:", filtered_graph)
+    random_supported_graph, degrees, random_degrees = rg.rewire_graph(filtered_graph)
+    # rg.visualize(degrees, random_degrees)
+    random_ppi_ddi_graph = rg.reassign_ddis(pickle.load(open(extended_graph, 'rb')), random_supported_graph)
 
-    pathways = pickle.load(open(path + "/pathways/pathways_human", 'rb'))
-    new_degrees = pathway_degree(pathways, filtered_graph)
-    # pathways['Degree in the PPI/DDI_old'] = pathways['Degree in the PPI/DDI']
-    # pathways['Degree in the structural PPI_old'] = pathways['Degree in the structural PPI']
-    pathways['Degree in the structural PPI'] = new_degrees
-    pickle.dump(pathways, open(path + "/pathways/pathways_human", 'wb'))
-
+    # pathways = pickle.load(open(path + "/pathways/pathways_human", 'rb'))
+    # new_degrees = pathway_degree(pathways, filtered_graph)
+    # # pathways['Degree in the PPI/DDI_old'] = pathways['Degree in the PPI/DDI']
+    # # pathways['Degree in the structural PPI_old'] = pathways['Degree in the structural PPI']
+    # pathways['Degree in the structural PPI'] = new_degrees
+    # pickle.dump(pathways, open(path + "/pathways/pathways_human_ext_random", 'wb'))

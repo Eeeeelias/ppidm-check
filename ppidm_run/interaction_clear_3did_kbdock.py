@@ -1,5 +1,5 @@
 import datetime
-from main import result_address, source_address
+from ppidm_run.main import result_address, source_address
 
 
 def clean_3did_kbdock_domine_downloaded_files():

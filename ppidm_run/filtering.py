@@ -4,7 +4,7 @@ import datetime
 import pickle
 import sys
 
-from main import result_address, source_address
+from ppidm_run.main import result_address, source_address
 import random
 from math import sqrt
 

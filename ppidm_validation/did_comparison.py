@@ -16,7 +16,7 @@ def sort_dict(dictionary: dict):
     return {k: v for k, v in sorted(dictionary.items(), key=lambda item: item[1], reverse=True)}
 
 
-def read_interactions(file: str, third_col='all'):
+def read_interactions(file: str, third_col=None):
     interactions = []
     header = False
     with open(file, 'r') as f:
@@ -25,8 +25,8 @@ def read_interactions(file: str, third_col='all'):
                 header = True
                 continue
             line = line.strip().split("\t")
-            if third_col != 'all':
-                if third_col != line[2]:
+            if third_col is not None:
+                if line[2] not in third_col:
                     continue
             assoc = (line[0], line[1]) if line[0] < line[1] else (line[1], line[0])
             interactions.append(assoc)

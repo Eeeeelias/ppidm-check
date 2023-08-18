@@ -2,7 +2,7 @@ import datetime
 import math
 from math import sqrt
 
-from main import source_address, result_address
+from ppidm_run.main import source_address, result_address
 
 
 def pvalue_calculation(source, seqDom, pdbchainDom):

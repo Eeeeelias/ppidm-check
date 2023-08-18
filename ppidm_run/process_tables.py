@@ -4,7 +4,7 @@ import timeit
 from itertools import combinations, chain
 from math import sqrt
 
-from main import source_address, result_address
+from ppidm_run.main import source_address, result_address
 
 
 def read_chain_dom():
