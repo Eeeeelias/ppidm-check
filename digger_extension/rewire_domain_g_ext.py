@@ -6,6 +6,8 @@ import networkx as nx
 from matplotlib import pyplot as plt
 from ppidm_validation.rewire_gold_standard import sorted_node_degrees
 
+random.seed(42)
+
 
 def rewire_graph(ext_graph: nx.Graph, file_path=None):
     sorted_ext_graph = sorted_node_degrees(list(ext_graph.edges))
@@ -36,10 +38,6 @@ def rewire_graph(ext_graph: nx.Graph, file_path=None):
     return random_ext_graph, degrees, random_degrees
 
 
-pickle.load(open('../data_digger/DomainG_extended.pkl', 'rb'))
-"../data_nease/random_graph_human.pkl"
-
-
 def visualize(degrees, random_degrees, file_path=None, title='Expected node degree vs. true node degree'):
     # Visualising
     plt.style.use('ggplot')
@@ -57,8 +55,6 @@ def visualize(degrees, random_degrees, file_path=None, title='Expected node degr
     if file_path is not None:
         plt.savefig(file_path)
     plt.show()
-
-"../pictures/domaing_expected_node_degree.png"
 
 
 def reassign_ddis(ppi_ddi_graph: nx.Graph, random_graph: nx.Graph):
