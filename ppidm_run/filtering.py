@@ -265,14 +265,14 @@ def assign_interaction():
     # gold_standard = pickle.load(open('pickles/random_gold.pickle', 'rb'))
 
     # rewire only train set!
-    train_set = random.sample(gold_standard, int(len(gold_standard) / 2))
-    # train_set = pickle.load(open('pickles/random_train.pickle', 'rb'))
+    # train_set = random.sample(gold_standard, int(len(gold_standard) / 2))
+    train_set = pickle.load(open('../pickles/random_train.pickle', 'rb'))
 
     test_set = gold_standard - set(train_set)
     # rewired test set can't be gold_std - train since train is random. test will now be half of gold_std
     # test_set = gold_standard - set(random.sample(gold_standard, int(len(gold_standard) / 2)))
-    # test_set = random.sample(gold_standard, int(len(gold_standard) / 2))
-    # gold_standard = pickle.load(open('pickles/random_gold.pickle', 'rb'))
+    test_set = random.sample(gold_standard, int(len(gold_standard) / 2))
+    gold_standard = pickle.load(open('../pickles/random_gold.pickle', 'rb'))
     print("Length of gold standard:", len(gold_standard))
     print("Length of train set:", len(train_set))
     print("Length of test set:", len(test_set))
@@ -567,6 +567,7 @@ def assign_interaction():
             f"Current threshold: {threshold} | Best threshold: {bold + str(best_threshold) + end} | Count all found: {count_all_found}\n")
         count += 1
 
+    return
     result_calculated = open(result_address + 'pfam-pfam-interaction-calculated', 'w')
     result_merged = open(result_address + 'pfam-pfam-interaction-merged', 'w')
     for datum1 in info:
