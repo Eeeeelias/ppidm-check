@@ -114,17 +114,17 @@ if __name__ == '__main__':
     print("PPI graph supported by DDI/ELM/PDB:", filtered_graph)
 
     # this is only relevant for the random graph
-    random_supported_graph, degrees, random_degrees = rg.rewire_graph(filtered_graph)
-    rg.visualize(degrees, random_degrees, title="Retaining node degree in the random PPI graph",
-                 file_path="../pictures/domaing_expected_node_degree.png")
-    random_ppi_ddi_graph = rg.reassign_ddis(pickle.load(open(extended_graph, 'rb')), random_supported_graph)
-    pickle.dump(random_ppi_ddi_graph, open("C:\\Users\\gooog\\miniconda3\\Lib\\site-packages\\nease\\data\\network\\"
-                                     "graph_human_ext_random.pkl", 'wb'))
+    # random_supported_graph, degrees, random_degrees = rg.rewire_graph(filtered_graph)
+    # rg.visualize(degrees, random_degrees, title="Retaining node degree in the random PPI graph",
+    #              file_path="../pictures/domaing_expected_node_degree.png", )
+    # random_ppi_ddi_graph = rg.reassign_ddis(pickle.load(open(extended_graph, 'rb')), random_supported_graph)
+    # pickle.dump(random_ppi_ddi_graph, open("C:\\Users\\gooog\\miniconda3\\Lib\\site-packages\\nease\\data\\network\\"
+    #                                  "graph_human_ext_random.pkl", 'wb'))
 
     # continue here for normal execution
     pathways = pickle.load(open(path + "/pathways/pathways_human", 'rb'))
-    new_degrees = pathway_degree(pathways, random_supported_graph)
+    new_degrees = pathway_degree(pathways, filtered_graph)
     # pathways['Degree in the PPI/DDI_old'] = pathways['Degree in the PPI/DDI']
     # pathways['Degree in the structural PPI_old'] = pathways['Degree in the structural PPI']
     pathways['Degree in the structural PPI'] = new_degrees
-    pickle.dump(pathways, open(path + "/pathways/pathways_human_ext_random", 'wb'))
+    pickle.dump(pathways, open(path + "/pathways/pathways_human_ext", 'wb'))

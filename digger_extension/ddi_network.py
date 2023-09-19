@@ -5,42 +5,16 @@ import timeit
 from ppidm_validation.did_comparison import inter_predicted
 import pandas as pd
 
-
-def read_protein_interactions(file_path: str, predicted_int: set[tuple], uniprot_to_entrez: pd.DataFrame):
-    interactions = set()
-    uniprot_to_entrez_dict = uniprot_to_entrez.set_index('UniProtID')['EntrezID'].to_dict()
-    start = timeit.default_timer()
-    pattern = re.compile(r"(PF.*\d)\t(.*)_(.*)\t(PF.*)")
-    counter = 0
-    with open(file_path, 'r') as f:
-        print(f"Reading: {file_path}")
-        for line in f:
-            counter += 1
-            if counter % 100000 == 0:
-                print(f"{file_path}: {counter:,} lines")
-            match = pattern.match(line.strip())
-            try:
-                domain1, prot1, prot2, domain2 = match.groups()
-            except AttributeError:
-                continue
-
-            if '_' in domain1 or '_' in domain2:
-                continue
-            if (domain1, domain2) not in predicted_int and (domain2, domain1) not in predicted_int:
-                continue
-            prot1 = uniprot_to_entrez_dict.get(prot1)
-            prot2 = uniprot_to_entrez_dict.get(prot2)
-            if prot1 is None or prot2 is None:
-                continue
-            interactions.add((f"{prot1}/{domain1}", f"{prot2}/{domain2}"))
-
-    print(f"Read {len(interactions)} interactions in {round((timeit.default_timer() - start) / 60 / 60, 1)} hours from "
-          f"{file_path}")
-    return interactions
+mart_table = pd.read_csv('../sourcedata/mart_export.txt', sep='\t', dtype={'Gene stable ID': str,
+                                                                        'UniProtKB/Swiss-Prot ID': str,
+                                                                        'NCBI gene (formerly Entrezgene) ID': str})
+mart_table.rename(columns={'Gene stable ID': 'GeneID', 'UniProtKB/Swiss-Prot ID': 'UniProtID',
+                           'NCBI gene (formerly Entrezgene) ID': 'EntrezID'}, inplace=True)
 
 
-def _wrapper_read_protein_interactions(file_path: str):
-    return read_protein_interactions(file_path, inter_predicted, mart_table)
+uniprot_to_entrez_dict = mart_table.set_index('UniProtID')['EntrezID'].to_dict()
+
+pattern = re.compile(r"(PF.*\d)\t(.*)_(.*)\t(PF.*)")
 
 
 def add_classification(file_path: str, classifications_info: str):
@@ -85,53 +59,65 @@ def add_classification(file_path: str, classifications_info: str):
             f.write(f"{interact[0]}\t{interact[1]}\t{interact[2]}\n")
 
 
-# g = nx.read_edgelist('digger_ddis_annotated.tsv', delimiter='\t', comments='d',
-#                      data=[('anno_by_3did', int), ('anno_by_domine', int)])
-#
-# print(g)
-#
-# with open('resultdata/result-all', 'r') as f:
-#     for line in f.readlines():
-#         if not line.startswith("PF"):
-#             continue
-#         parts = line.split("\t")
-#         g.add_edge(parts[0], parts[1])
+def process_line(line, predicted_int):
+    line = line.strip()
+    match = pattern.match(line)
+    if match is None:
+        return None
+
+    domain1, prot1, prot2, domain2 = match.groups()
+
+    if '_' in domain1 or '_' in domain2:
+        return None
+
+    tmp = (domain1, domain2) if domain1 < domain2 else (domain2, domain1)
+    if tmp not in predicted_int:
+        return None
+
+    prot1 = uniprot_to_entrez_dict.get(prot1)
+    prot2 = uniprot_to_entrez_dict.get(prot2)
+    if prot1 is None or prot2 is None:
+        return None
+    return f"{prot1}/{domain1}", f"{prot2}/{domain2}"
 
 
-mart_table = pd.read_csv('../sourcedata/mart_export.txt', sep='\t', dtype={'Gene stable ID': str,
-                                                                        'UniProtKB/Swiss-Prot ID': str,
-                                                                        'NCBI gene (formerly Entrezgene) ID': str})
-mart_table.rename(columns={'Gene stable ID': 'GeneID', 'UniProtKB/Swiss-Prot ID': 'UniProtID',
-                           'NCBI gene (formerly Entrezgene) ID': 'EntrezID'}, inplace=True)
-
-
-def parallel_execution(inputs):
-    pool = multiprocessing.Pool()
-    results = pool.map(_wrapper_read_protein_interactions, inputs)
-    pool.close()
-    pool.join()
-
+def worker(chunk):
+    global chunks
+    results = []
+    for line in chunk:
+        result = process_line(line, inter_predicted)
+        if result is not None:
+            results.append(result)
+    print(f"chunk complete")
     return results
 
 
-def write_ddi_ppi_connection():
-    input_list = ["resultdata/source" + source + "pfam_ordered" for source in
-                  ["7_hprd", "2_mint", "3_dip", "1_intact", "4_biogrid", "6_sifts", "5_string-exp", "5_string-rest", ]]
-    output_list = parallel_execution(input_list)
-    # output_list += parallel_execution(input_list[3:5])
-    # output_list += parallel_execution(input_list[5:7])
+if __name__ == '__main__':
+    file_path = "../resultdata/source_combined"
+    start = timeit.default_timer()
 
-    all_interactions = set()
-    for s in output_list:
-        all_interactions = all_interactions.union(s)
+    num_processes = multiprocessing.cpu_count()
+    print(f"initializing {num_processes} cores")
+    with multiprocessing.Pool(processes=num_processes) as pool, open(file_path, 'r') as f:
+        lines = f.readlines()
+        chunk_size = len(lines) // num_processes  # Split into roughly equal chunks
+        chunks = [lines[i:i + chunk_size] for i in range(0, len(lines), chunk_size)]
+
+        results_list = pool.map(worker, chunks)
+
+    # Combine results from all chunks
+    combined_results = [result for sublist in results_list for result in sublist]
+
+    # get the results
+    interactions = set()
+    for i in combined_results:
+        interactions.add(i)
+
+    print(f"Read {len(interactions)} interactions in {round((timeit.default_timer() - start) / 60, 3)} minutes from "
+          f"{file_path}")
 
     with open("predicted_ddi_ppi" + '.tsv', 'w') as f:
-        for ddi in all_interactions:
+        for ddi in interactions:
             f.write(f'{ddi[0]}\t{ddi[1]}\n')
-    print("Done")
 
-
-if __name__ == '__main__':
-    write_ddi_ppi_connection()
-    # read_protein_interactions("../resultdata/source3_dippfam_ordered", inter_predicted, mart_table)
-    add_classification("predicted_ddi_ppi.tsv", "../resultdata/result-all")
+    add_classification("../predicted_ddi_ppi.tsv", "../resultdata/result-all")

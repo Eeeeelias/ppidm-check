@@ -18,7 +18,7 @@ def sort_dict(dictionary: dict):
 
 def read_interactions(file: str, third_col=None):
     interactions = []
-    header = True
+    header = False
     with open(file, 'r') as f:
         for line in f.readlines():
             if not header:
@@ -186,6 +186,13 @@ all_known_ids = pickle.load(open('../pickles/all_known_ids.pickle', 'rb'))
 
 
 if __name__ == '__main__':
+    # inter_predicted = sorted(inter_predicted, key=lambda x: x[0] < x[1])
+    c = 0
+    for i, j in inter_predicted:
+        if i <= j:
+            continue
+        c+=1
+    print(c)
     # removing domains that were not known at the time of PPIDM
     did_2022_clean = remove_unknown_domains(all_known_ids, did_2022)
 

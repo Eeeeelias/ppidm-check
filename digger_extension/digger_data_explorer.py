@@ -43,7 +43,7 @@ if __name__ == '__main__':
     # print(entrez_to_name_online('6874'))
     # export_table("../data_digger/DomainG.pkl_interactions")
 
-    ddi_predicted = read_interactions('../predicted_ddi_ppi.tsv.tsv', third_col=['Gold', 'Silver'])
+    ddi_predicted = read_interactions('../predicted_ddi_ppi.tsv.tsv', third_col=['Gold', 'Silver', 'Bronze'])
     print("Predicted PPI/DDI interactions:", len(set(ddi_predicted)))
     for ddi in ddi_predicted:
         ddi_ppi_set.add(ddi)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     ext_graph = nx.Graph(ddi_ppi_set)
     print("Extended graph:", ext_graph)
-    pickle.dump(ext_graph, open("../data_digger/DomainG_extended_gold_silver.pkl", 'wb'))
+    # pickle.dump(ext_graph, open("../data_digger/DomainG_extended.pkl", 'wb'))
     # Gold: 380.363
     # Silver: 97.645
     # Bronze: 545.397
