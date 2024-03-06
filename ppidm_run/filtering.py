@@ -88,7 +88,7 @@ def extract_info(relevant_pfams: set, score_info: dict):
     print("Wrote scores to pickle")
 
 
-def create_wrong_assocations():
+def create_wrong_assocations(sources):
     start = datetime.datetime.now()
     print("Create NEGATIVE assocaitions from all inputs (around ? mins)")
 
@@ -108,8 +108,7 @@ def create_wrong_assocations():
     dom_common_factors = dict()
     all_interactions_DDI = set()
     # for source in ['source1_intact']:
-    for source in ['source1_intact', 'source2_mint', 'source3_dip', 'source4_biogrid', 'source5_string-exp',
-                   'source5_string-rest', 'source6_sifts', 'source7_hprd']:
+    for source in sources:
         file1 = open(result_address + source + 'pfam', 'r')
         # interaction_score = dict()
         for line in file1:
@@ -196,7 +195,7 @@ def create_wrong_assocations():
     print("Running Time: " + str(end - start) + "\n")
 
 
-def assign_interaction():
+def assign_interaction(sources):
     start = datetime.datetime.now()
     print("Filtering associations for Interactions(around ? mins)")
     interactions_3did, pfam_3did = read_interactions(result_address + '3did')
@@ -206,29 +205,15 @@ def assign_interaction():
     info = dict()
     info_tuple_multiple = dict()
 
-    interactions_intact, pfam_intact, info, info_tuple_multiple = interactions(
-        result_address + 'pfam-pfam-interaction-intact', info, info_tuple_multiple, 'intact')
+    interactions_sources = {}
+    pfam_sources = {}
 
-    interactions_dip, pfam_dip, info, info_tuple_multiple = interactions(
-        result_address + 'pfam-pfam-interaction-dip', info, info_tuple_multiple, 'dip')
-
-    interactions_mint, pfam_mint, info, info_tuple_multiple = interactions(
-        result_address + 'pfam-pfam-interaction-mint', info, info_tuple_multiple, 'mint')
-
-    interactions_biogrid, pfam_biogrid, info, info_tuple_multiple = interactions(
-        result_address + 'pfam-pfam-interaction-biogrid', info, info_tuple_multiple, 'biogrid')
-
-    interactions_stringg_exp, pfam_stringg_exp, info, info_tuple_multiple = interactions(
-        result_address + 'pfam-pfam-interaction-string-exp', info, info_tuple_multiple, 'string_exp')
-
-    interactions_stringg_rest, pfam_stringg_rest, info, info_tuple_multiple = interactions(
-        result_address + 'pfam-pfam-interaction-string-rest', info, info_tuple_multiple, 'string_rest')
-
-    interactions_sifts_accession, pfam_sifts_accession, info, info_tuple_multiple = interactions(
-        result_address + 'pfam-pfam-interaction-sifts', info, info_tuple_multiple, 'sifts_acc')
-
-    interactions_hprd, pfam_hprd, info, info_tuple_multiple = interactions(
-        result_address + 'pfam-pfam-interaction-hprd', info, info_tuple_multiple, 'hprd')
+    for source in sources:
+        source_name = source[6:]
+        interaction, pfam, info, info_tuple_multiple = interactions(
+            result_address + 'pfam-pfam-interaction-' + source_name, info, info_tuple_multiple, source_name)
+        interactions_sources[source] = interaction
+        pfam_sources[source] = pfam
 
     for item1 in info:
         for item2 in info[item1]:
@@ -250,15 +235,16 @@ def assign_interaction():
                 info[item1][item2]['hprd'] = 0
 
     # removed interactions_kbdock here due to me not having these interactions
-    gold_standard = (interactions_intact |
-                     interactions_dip |
-                     interactions_mint |
-                     interactions_biogrid |
-                     interactions_stringg_exp |
-                     interactions_stringg_rest |
-                     interactions_sifts_accession |
-                     interactions_hprd) & \
-                    (interactions_3did)
+    gold_standard = set(x for x in interactions_sources.values()) & interactions_3did
+    # gold_standard = (interactions_intact |
+    #                  interactions_dip |
+    #                  interactions_mint |
+    #                  interactions_biogrid |
+    #                  interactions_stringg_exp |
+    #                  interactions_stringg_rest |
+    #                  interactions_sifts_accession |
+    #                  interactions_hprd) & \
+    #                 (interactions_3did)
 
     print("Getting gold_standard interactions: " + str(datetime.datetime.now() - start) + "\n")
     # pickle.dump(gold_standard, open('pickles/gold_standard.pickle', 'wb'))
@@ -356,14 +342,7 @@ def assign_interaction():
                                         best_coef6 = coef6
                                         best_coef7 = coef7
                                         best_coef8 = coef8
-                                        # best_coef1 = 0
-                                        # best_coef2 = 0
-                                        # best_coef3 = 0
-                                        # best_coef4 = 0
-                                        # best_coef5 = 0
-                                        # best_coef6 = 0
-                                        # best_coef7 = coef7
-                                        # best_coef8 = 0
+
 
     print("Overall best coefs:", best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6, best_coef7, best_coef8)
     print("Best AUC:", best_area_under_curve)

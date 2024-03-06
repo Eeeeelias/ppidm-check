@@ -66,7 +66,7 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
     start = datetime.datetime.now()
     print(f"SIMILARITY Calculator for {source} Interactions")
 
-    result = open(result_address + source + 'pfam_ordered', 'w')
+    result = open(result_address + source + 'pfam', 'w')
     file1 = open(source_address + source, 'r')
     each_interaction_seq_seq = dict()
     interaction_dict = dict()
