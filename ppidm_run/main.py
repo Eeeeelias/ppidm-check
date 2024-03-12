@@ -25,19 +25,19 @@ if __name__ == '__main__':
     print("Loading files from pickle took:", round(timeit.default_timer() - start, 1), "seconds")
 
     # This calculates all the similarity scores for each source
-    for i in sources:
-         pt.similarity_calculator_interaction(i, 'pfam', seqDom, seqpdbchain, pdbchainDom)
-    #
+    # for i in sources:
+    #      pt.similarity_calculator_interaction(i, 'pfam', seqDom, seqpdbchain, pdbchainDom)
+
     # # sifts_reader_process('sifts', 'pfam')
     # This is a cleanup of the domain interaction sources
-    ic3k.clean_3did_kbdock_domine_downloaded_files()
-    #
+    # ic3k.clean_3did_kbdock_domine_downloaded_files()
+
     # This function creates random wrong associations (retaining node degree) for the ddi inference
-    filtering.create_wrong_assocations(sources)
-    #
+    # filtering.create_wrong_assocations(sources)
+
     # This function assigns the interactions. It also does all the "hyperparameter optimization"
     filtering.assign_interaction(sources)
-    #
+
     ic3k.intersection_CAPS_3did_kbdock()
     ic3k.kbdock_union_3did()
 

@@ -3,6 +3,7 @@ import operator
 import datetime
 import pickle
 import sys
+import itertools
 
 from ppidm_run.main import result_address, source_address
 import random
@@ -69,8 +70,7 @@ def interactions(file_path: str, info: dict, info_tuple_multiple: dict, source: 
     return interactions_intact, pfam_intact, info, info_tuple_multiple
 
 
-def coef_score(coefficients: list, interaction: list):
-    sources = ['intact', 'dip', 'mint', 'biogrid', 'string_exp', 'string_rest', 'sifts_acc', 'hprd']
+def coef_score(coefficients: list, interaction: list, sources: list):
     result = []
     for coef, src in zip(coefficients, sources):
         result.append(coef * interaction[src])
@@ -207,152 +207,106 @@ def assign_interaction(sources):
 
     interactions_sources = {}
     pfam_sources = {}
+    source_names = []
 
     for source in sources:
-        source_name = source[6:]
+        source_name = source[8:]
+        print("Getting interactions for source:", source_name)
         interaction, pfam, info, info_tuple_multiple = interactions(
             result_address + 'pfam-pfam-interaction-' + source_name, info, info_tuple_multiple, source_name)
-        interactions_sources[source] = interaction
-        pfam_sources[source] = pfam
+        source_names.append(source_name)
+        interactions_sources[source_name] = interaction
+        pfam_sources[source_name] = pfam
 
     for item1 in info:
         for item2 in info[item1]:
-            if 'intact' not in info[item1][item2]:
-                info[item1][item2]['intact'] = 0
-            if 'dip' not in info[item1][item2]:
-                info[item1][item2]['dip'] = 0
-            if 'mint' not in info[item1][item2]:
-                info[item1][item2]['mint'] = 0
-            if 'biogrid' not in info[item1][item2]:
-                info[item1][item2]['biogrid'] = 0
-            if 'string_exp' not in info[item1][item2]:
-                info[item1][item2]['string_exp'] = 0
-            if 'string_rest' not in info[item1][item2]:
-                info[item1][item2]['string_rest'] = 0
-            if 'sifts_acc' not in info[item1][item2]:
-                info[item1][item2]['sifts_acc'] = 0
-            if 'hprd' not in info[item1][item2]:
-                info[item1][item2]['hprd'] = 0
-
-    # removed interactions_kbdock here due to me not having these interactions
-    gold_standard = set(x for x in interactions_sources.values()) & interactions_3did
-    # gold_standard = (interactions_intact |
-    #                  interactions_dip |
-    #                  interactions_mint |
-    #                  interactions_biogrid |
-    #                  interactions_stringg_exp |
-    #                  interactions_stringg_rest |
-    #                  interactions_sifts_accession |
-    #                  interactions_hprd) & \
-    #                 (interactions_3did)
+            for source in source_names:
+                info[item1][item2].setdefault(source, 0)
 
     print("Getting gold_standard interactions: " + str(datetime.datetime.now() - start) + "\n")
-    # pickle.dump(gold_standard, open('pickles/gold_standard.pickle', 'wb'))
-    # gold_standard = pickle.load(open('pickles/random_gold.pickle', 'rb'))
+    # find the best interactions that are well-supported by any of the sources
+    gold_standard = set()
+    for source in interactions_sources.keys():
+        gold_standard = gold_standard.union(interactions_sources[source])
+    background_data = list(gold_standard - (gold_standard.intersection(interactions_3did)))
+    gold_standard = gold_standard.intersection(interactions_3did)
 
-    # rewire only train set!
-    # train_set = random.sample(gold_standard, int(len(gold_standard) / 2))
-    train_set = pickle.load(open('../pickles/random_train.pickle', 'rb'))
+    train_set = random.sample(gold_standard, int(len(gold_standard) / 2))
 
     test_set = gold_standard - set(train_set)
-    # rewired test set can't be gold_std - train since train is random. test will now be half of gold_std
-    # test_set = gold_standard - set(random.sample(gold_standard, int(len(gold_standard) / 2)))
-    test_set = random.sample(gold_standard, int(len(gold_standard) / 2))
-    gold_standard = pickle.load(open('../pickles/random_gold.pickle', 'rb'))
     print("Length of gold standard:", len(gold_standard))
     print("Length of train set:", len(train_set))
     print("Length of test set:", len(test_set))
-
-    backgroundData = []
-    for item1 in info:
-        for item2 in info[item1]:
-            if (item1, item2) not in gold_standard:
-                backgroundData.append((item1, item2))
-
-    print("Length of background data:", len(backgroundData))
+    print("Length of background data:", len(background_data))
     # backgroundData = random.sample(backgroundData, len(backgroundData) / 100)
     # print(len(backgroundData))
 
     best_area_under_curve = 0
-    best_coef1 = 0
-    best_coef2 = 0
-    best_coef3 = 0
-    best_coef4 = 0
-    best_coef5 = 0
-    best_coef6 = 0
-    best_coef7 = 0
-    best_coef8 = 0
 
-    for coef1 in range(5, 6):
-        for coef2 in range(1, 2):
-            for coef3 in range(1, 2):
-                for coef4 in range(9, 10):
-                    for coef5 in range(12, 13):
-                        for coef6 in range(6, 7):
-                            for coef7 in range(100, 101):
-                                for coef8 in range(17, 18):
-                                    lenSize = len(backgroundData)
-                                    coef_summation = coef1 + coef2 + coef3 + coef4 + coef5 + coef6 + coef7 + coef8
-                                    all_data_positive_negative = {}
-                                    coefs = [coef1, coef2, coef3, coef4, coef5, coef6, coef7, coef8]
-                                    for datum in gold_standard:
-                                        if datum[0] in info:
-                                            if datum[1] in info[datum[0]]:
-                                                dom_score = coef_score(coefs, info[datum[0]][datum[1]])
-                                                all_data_positive_negative[datum] = sum(dom_score) / coef_summation
-                                            else:
-                                                all_data_positive_negative[datum] = 0
-                                        else:
-                                            all_data_positive_negative[datum] = 0
+    num_sources = len(sources)
+    best_coefs = {f'coef{i}': 0 for i in range(1, num_sources + 1)}
 
-                                    for datum in backgroundData:
-                                        if datum[0] in info:
-                                            if datum[1] in info[datum[0]]:
-                                                dom_score = coef_score(coefs, info[datum[0]][datum[1]])
-                                                all_data_positive_negative[datum] = sum(dom_score) / coef_summation
+    # TODO: give proper ranges that make sense for the coefficients and minimize the search space
 
-                                    sorted_all_data_positive_negative = sorted(all_data_positive_negative.items(),
-                                                                               key=operator.itemgetter(1), reverse=True)
-                                    yindex = 0.0
-                                    area_under_curve = 0.0
+    # coefficient_ranges = [range(1, 2), range(5, 6), range(1, 2), range(9, 10), range(12, 13), range(6, 7), range(100, 101),
+    #                range(17, 18)]
+    coefficient_ranges = [range(1, 2)] * num_sources
 
-                                    for datum in sorted_all_data_positive_negative:
-                                        # print(datum[0])
-                                        # print(gold_standard)
-                                        # raw_input()
-                                        if datum[0] in gold_standard:
-                                            yindex += 1
-                                        else:
-                                            area_under_curve += (yindex / len(gold_standard)) * (1.0 / lenSize)
+    # Generate all possible combinations of coefficients
+    for coefficients in itertools.product(*coefficient_ranges):
+        coefficients = list(coefficients)
+        lenSize = len(background_data)
+        coef_sum = sum(coefficients)
+        all_data_positive_negative = {}
+        for datum in gold_standard:
+            if datum[0] in info:
+                if datum[1] in info[datum[0]]:
+                    dom_score = coef_score(coefficients, info[datum[0]][datum[1]], source_names)
+                    all_data_positive_negative[datum] = sum(dom_score) / coef_sum
+                else:
+                    all_data_positive_negative[datum] = 0
+            else:
+                all_data_positive_negative[datum] = 0
 
-                                    print("AUC:", area_under_curve)
-                                    print("Coefficients:", coef1, coef2, coef3, coef4, coef5, coef6, coef7, coef8)
-                                    print("Best Coefficients",
-                                        best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6,
-                                        best_coef7, best_coef8)
-                                    print("\n")
+        for datum in background_data:
+            if datum[0] in info:
+                if datum[1] in info[datum[0]]:
+                    dom_score = coef_score(coefficients, info[datum[0]][datum[1]], source_names)
+                    all_data_positive_negative[datum] = sum(dom_score) / coef_sum
 
-                                    if best_area_under_curve < area_under_curve:
-                                        best_area_under_curve = area_under_curve
-                                        best_coef1 = coef1
-                                        best_coef2 = coef2
-                                        best_coef3 = coef3
-                                        best_coef4 = coef4
-                                        best_coef5 = coef5
-                                        best_coef6 = coef6
-                                        best_coef7 = coef7
-                                        best_coef8 = coef8
+        sorted_all_data_positive_negative = sorted(all_data_positive_negative.items(),
+                                                   key=operator.itemgetter(1), reverse=True)
+        yindex = 0.0
+        area_under_curve = 0.0
+
+        for datum in sorted_all_data_positive_negative:
+            # print(datum[0])
+            # print(gold_standard)
+            # raw_input()
+            if datum[0] in gold_standard:
+                yindex += 1
+            else:
+                area_under_curve += (yindex / len(gold_standard)) * (1.0 / lenSize)
+
+        print("AUC:", area_under_curve)
+        print("Coefficients:", coefficients)
+        print("Best Coefficients", list(best_coefs.values()))
+        print("\n")
+
+        if best_area_under_curve < area_under_curve:
+            best_area_under_curve = area_under_curve
+            best_coefs = {f'coef{i}': coef for i, coef in enumerate(coefficients, 1)}
 
 
-    print("Overall best coefs:", best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6, best_coef7, best_coef8)
+    print("Overall best coefs:", list(best_coefs.values()))
     print("Best AUC:", best_area_under_curve)
 
     all_data_scores = dict()
-    best_coefs = [best_coef1, best_coef2, best_coef3, best_coef4, best_coef5, best_coef6, best_coef7, best_coef8]
+    best_coefs = [x for x in best_coefs.values()]
     coef_summation = sum(best_coefs)
     for item1 in info:
         for item2 in info[item1]:
-            dom_score = coef_score(best_coefs, info[item1][item2])
+            dom_score = coef_score(best_coefs, info[item1][item2], source_names)
             if item1 in all_data_scores:
                 all_data_scores[item1][item2] = sum(dom_score) / coef_summation
             else:
@@ -379,6 +333,8 @@ def assign_interaction(sources):
 
         print("Negatives", len(negatives))
         gold_standard_negative_set = random.sample(negatives, len(gold_standard))
+
+    # TODO: make this mess source agnostic
 
     elif neg_model == 2:
         max_pair = ''
@@ -427,7 +383,7 @@ def assign_interaction(sources):
         print('negative set max score' + str(max_score))
 
     else:
-        gold_standard_negative_set = random.sample(backgroundData, len(gold_standard))
+        gold_standard_negative_set = random.sample(background_data, len(gold_standard))
 
     train_negative_set = random.sample(gold_standard_negative_set, int(len(gold_standard) / 2))
     test_negative_set = set(gold_standard_negative_set) - set(train_negative_set)
