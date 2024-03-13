@@ -322,7 +322,7 @@ def assign_interaction(sources):
     if neg_model == 1:
         negatives = set()
         negatives_score = dict()
-        negative_file = open(result_address + 'negative_set1', 'r')
+        negative_file = open(result_address + 'negative_set', 'r')
         for line in negative_file:
             line_sp = line.rstrip().split('\t')
             # if float(line_sp[5]) > 0.04:
@@ -334,8 +334,6 @@ def assign_interaction(sources):
         print("Negatives", len(negatives))
         gold_standard_negative_set = random.sample(negatives, len(gold_standard))
 
-    # TODO: make this mess source agnostic
-
     elif neg_model == 2:
         max_pair = ''
         max_score = 0.0
@@ -344,22 +342,9 @@ def assign_interaction(sources):
                 if (datum1, datum2) in gold_standard:
                     continue
                 flag_ok_for_negative = 0
-                if info[datum1][datum2]['intact'] > 0:
-                    flag_ok_for_negative += 1
-                if info[datum1][datum2]['dip'] > 0:
-                    flag_ok_for_negative += 1
-                if info[datum1][datum2]['mint'] > 0:
-                    flag_ok_for_negative += 1
-                if info[datum1][datum2]['biogrid'] > 0:
-                    flag_ok_for_negative += 1
-                if info[datum1][datum2]['string_exp'] > 0:
-                    flag_ok_for_negative += 1
-                if info[datum1][datum2]['string_rest'] > 0:
-                    flag_ok_for_negative += 1
-                if info[datum1][datum2]['sifts_acc'] > 0:
-                    flag_ok_for_negative += 1
-                if info[datum1][datum2]['hprd'] > 0:
-                    flag_ok_for_negative += 1
+                for source in source_names:
+                    if info[datum1][datum2][source] > 0:
+                        flag_ok_for_negative += 1
 
                 if flag_ok_for_negative >= 6:
                     if len(gold_standard_negative_set) < len(gold_standard):
@@ -442,7 +427,7 @@ def assign_interaction(sources):
                 if datum[0] in info:
                     if datum[1] in info[datum[0]]:
                         coef_summation = float(sum(best_coefs))
-                        score = sum(coef_score(best_coefs, info[datum[0]][datum[1]])) / coef_summation
+                        score = sum(coef_score(best_coefs, info[datum[0]][datum[1]], source_names)) / coef_summation
             if score >= threshold:
                 # flag = True
                 count_for_train_negative += 1
@@ -457,7 +442,7 @@ def assign_interaction(sources):
                 if datum[0] in info:
                     if datum[1] in info[datum[0]]:
                         coef_summation = float(sum(best_coefs))
-                        score = sum(coef_score(best_coefs, info[datum[0]][datum[1]])) / coef_summation
+                        score = sum(coef_score(best_coefs, info[datum[0]][datum[1]], source_names)) / coef_summation
             if score >= threshold:
                 # flag = True
                 count_for_test_negative += 1
@@ -467,7 +452,7 @@ def assign_interaction(sources):
             for datum2 in info[datum1]:
                 flag = False
                 coef_summation = float(sum(best_coefs))
-                score = sum(coef_score(best_coefs, info[datum1][datum2])) / coef_summation
+                score = sum(coef_score(best_coefs, info[datum1][datum2], source_names)) / coef_summation
                 if score >= threshold:
                     flag = True
                     count_all_found += 1
@@ -502,19 +487,13 @@ def assign_interaction(sources):
             f"Current threshold: {threshold} | Best threshold: {bold + str(best_threshold) + end} | Count all found: {count_all_found}\n")
         count += 1
 
-    return
     result_calculated = open(result_address + 'pfam-pfam-interaction-calculated', 'w')
     result_merged = open(result_address + 'pfam-pfam-interaction-merged', 'w')
     for datum1 in info:
         for datum2 in info[datum1]:
             score = all_data_scores[datum1][datum2]
-
-            result_string = datum1 + '\t' + datum2 + '\t' + str(info[datum1][datum2]['intact']) + '\t' + str(
-                info[datum1][datum2]['dip']) + '\t' + str(info[datum1][datum2]['mint']) + '\t' + str(
-                info[datum1][datum2]['biogrid']) + '\t' + str(info[datum1][datum2]['string_exp']) + '\t' + str(
-                info[datum1][datum2]['string_rest']) + '\t' + str(info[datum1][datum2]['sifts_acc']) + '\t' + str(
-                info[datum1][datum2]['hprd']) + '\t' + str(
-                score) + '\n'
+            source_infos = '\t'.join([str(info[datum1][datum2][source]) for source in source_names])
+            result_string = datum1 + '\t' + datum2 + '\t' + source_infos + '\t' + str(score) + '\n'
             result_merged.write(result_string)
             if score >= best_threshold:
                 flag = True
@@ -537,13 +516,9 @@ def assign_interaction(sources):
         else:
             flag = flag + 'no'
 
-        result_gold_standard.write(
-            datum[0] + '\t' + datum[1] + '\t' + str(info[datum[0]][datum[1]]['intact']) + '\t' + str(
-                info[datum[0]][datum[1]]['dip']) + '\t' + str(info[datum[0]][datum[1]]['mint']) + '\t' + str(
-                info[datum[0]][datum[1]]['biogrid']) + '\t' + str(info[datum[0]][datum[1]]['string_exp']) + '\t' + str(
-                info[datum[0]][datum[1]]['string_rest']) + '\t' + str(
-                info[datum[0]][datum[1]]['sifts_acc']) + '\t' + str(info[datum[0]][datum[1]]['hprd']) + '\t' + str(
-                score) + '\t' + flag + '\n')
+        sources = '\t'.join([str(info[datum[0]][datum[1]][source]) for source in source_names])
+        result_gold = datum[0] + '\t' + datum[1] + '\t' + sources + '\t' + str(score) + '\t' + flag + '\n'
+        result_gold_standard.write(result_gold)
 
     result_negative = open(result_address + 'pfam-pfam-interaction-negative', 'w')
     for datum in gold_standard_negative_set:
@@ -556,7 +531,7 @@ def assign_interaction(sources):
             score = negatives_score[datum]
         else:
             coef_summation = sum(best_coefs)
-            score = sum(coef_score(best_coefs, info[datum[0]][datum[1]])) / coef_summation
+            score = sum(coef_score(best_coefs, info[datum[0]][datum[1]], source_names)) / coef_summation
 
         if score >= best_threshold:
             flag = flag + 'yes'
@@ -568,22 +543,8 @@ def assign_interaction(sources):
 
     for item1 in info_tuple_multiple:
         for item2 in info_tuple_multiple[item1]:
-            if 'intact' not in info_tuple_multiple[item1][item2]:
-                info_tuple_multiple[item1][item2]['intact'] = 0
-            if 'dip' not in info_tuple_multiple[item1][item2]:
-                info_tuple_multiple[item1][item2]['dip'] = 0
-            if 'mint' not in info_tuple_multiple[item1][item2]:
-                info_tuple_multiple[item1][item2]['mint'] = 0
-            if 'biogrid' not in info_tuple_multiple[item1][item2]:
-                info_tuple_multiple[item1][item2]['biogrid'] = 0
-            if 'string_exp' not in info_tuple_multiple[item1][item2]:
-                info_tuple_multiple[item1][item2]['string_exp'] = 0
-            if 'string_rest' not in info_tuple_multiple[item1][item2]:
-                info_tuple_multiple[item1][item2]['string_rest'] = 0
-            if 'sifts_acc' not in info_tuple_multiple[item1][item2]:
-                info_tuple_multiple[item1][item2]['sifts_acc'] = 0
-            if 'hprd' not in info_tuple_multiple[item1][item2]:
-                info_tuple_multiple[item1][item2]['hprd'] = 0
+            for source in source_names:
+                info_tuple_multiple[item1][item2].setdefault(source, 0)
 
     result_calculated_tuple = open(result_address + 'pfam-pfam-interaction-calculated_tuple', 'w')
     result_merged_tuple = open(result_address + 'pfam-pfam-interaction-merged_tuple', 'w')
@@ -591,31 +552,16 @@ def assign_interaction(sources):
         for datum2 in info_tuple_multiple[datum1]:
             # flag = False
             coef_summation = sum(best_coefs)
-            score = sum(coef_score(best_coefs, info_tuple_multiple[datum1][datum2])) / coef_summation
+            score = sum(coef_score(best_coefs, info_tuple_multiple[datum1][datum2], source_names)) / coef_summation
 
-            result_merged_tuple.write(
-                datum1 + '\t' + datum2 + '\t' + str(info_tuple_multiple[datum1][datum2]['intact']) + '\t' + str(
-                    info_tuple_multiple[datum1][datum2]['dip']) + '\t' + str(
-                    info_tuple_multiple[datum1][datum2]['mint']) + '\t' + str(
-                    info_tuple_multiple[datum1][datum2]['biogrid']) + '\t' + str(
-                    info_tuple_multiple[datum1][datum2]['string_exp']) + '\t' + str(
-                    info_tuple_multiple[datum1][datum2]['string_rest']) + '\t' + str(
-                    info_tuple_multiple[datum1][datum2]['sifts_acc']) + '\t' + str(
-                    info_tuple_multiple[datum1][datum2]['hprd']) + '\t' + str(
-                    score) + '\n')
+            source_infos = '\t'.join([str(info_tuple_multiple[datum1][datum2][source]) for source in source_names])
+            result_string = datum1 + '\t' + datum2 + '\t' + source_infos + '\t' + str(score) + '\n'
+
+            result_merged_tuple.write(result_string)
 
             if score >= best_threshold:
                 flag = True
-                result_calculated_tuple.write(
-                    datum1 + '\t' + datum2 + '\t' + str(info_tuple_multiple[datum1][datum2]['intact']) + '\t' + str(
-                        info_tuple_multiple[datum1][datum2]['dip']) + '\t' + str(
-                        info_tuple_multiple[datum1][datum2]['mint']) + '\t' + str(
-                        info_tuple_multiple[datum1][datum2]['biogrid']) + '\t' + str(
-                        info_tuple_multiple[datum1][datum2]['string_exp']) + '\t' + str(
-                        info_tuple_multiple[datum1][datum2]['string_rest']) + '\t' + str(
-                        info_tuple_multiple[datum1][datum2]['sifts_acc']) + '\t' + str(
-                        info_tuple_multiple[datum1][datum2]['hprd']) + '\t' + str(
-                        score) + '\n')
+                result_calculated_tuple.write(result_string)
 
     result_calculated.close()
     result_merged.close()

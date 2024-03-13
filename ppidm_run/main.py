@@ -36,10 +36,9 @@ if __name__ == '__main__':
     # filtering.create_wrong_assocations(sources)
 
     # This function assigns the interactions. It also does all the "hyperparameter optimization"
-    filtering.assign_interaction(sources)
+    # filtering.assign_interaction(sources)
 
-    ic3k.intersection_CAPS_3did_kbdock()
-    ic3k.kbdock_union_3did()
+    # ic3k.kbdock_union_3did()
 
     # This part calculates and sorts all the p-values for every domain-domain interaction
     for i in sources:

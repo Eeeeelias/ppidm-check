@@ -72,8 +72,10 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
                         domain_seq_seq[domain] = set()
                         domain_seq_seq[domain].add(seq_seq)
 
-    final_result = open(result_address + 'newpvalue-' + source[8:], 'w')
+    source_name = source[8:]
+    final_result = open(result_address + 'newpvalue-' + source_name, 'w')
 
+    # TODO: make this into something that is actually readable and works for all sources
     file1 = open(result_address + 'pfam-pfam-interaction-calculated', 'r')
     # file1.readline()
     c = 0
@@ -81,7 +83,7 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
         lineSplit = line.rstrip().split("\t")
         dom1 = lineSplit[0]
         dom2 = lineSplit[1]
-        AssocScore = lineSplit[10]
+        AssocScore = lineSplit[-1]
         source_score = 0
         if source[8:] == 'intact':
             source_score = lineSplit[2]
