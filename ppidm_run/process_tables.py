@@ -33,7 +33,7 @@ def read_chain_dom():
     print("Read pdb_chain_pfam.tsv")
 
     seqDom = dict()
-    file1 = open(result_address + 'pfam-seq-sp', 'r')
+    file1 = open(source_address + 'pfam-seq-sp', 'r')
     for line in file1:
         line_sp = line.rstrip().split('\t')
         dom = line_sp[0]
@@ -45,7 +45,7 @@ def read_chain_dom():
             seqDom[seq].append(dom)
     print("Read pfam-seq-sp")
 
-    file1 = open(result_address + 'pfam-seq-tr', 'r')
+    file1 = open(source_address + 'pfam-seq-tr', 'r')
     for line in file1:
         line_sp = line.rstrip().split('\t')
         dom = line_sp[0]

@@ -38,7 +38,7 @@ def clean_3did_kbdock_domine_downloaded_files():
     result.close()
 
     file1 = open(source_address + 'INTERACTION.txt', 'r')
-    result = open(result_address + 'domine', 'w')
+    result = open(source_address + 'domine', 'w')
     associations = set()
     for line in file1:
         if 'PF' not in line:
@@ -73,7 +73,7 @@ def kbdock_union_3did():
 
     interactions_kbdock = set()
     pfam_kbdock = set()
-    file1 = open(result_address + 'kbdock', 'r')
+    file1 = open(source_address + 'kbdock', 'r')
     for line in file1:
         line_sp = line.rstrip().split('\t')
         item1 = line_sp[0]

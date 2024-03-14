@@ -94,7 +94,7 @@ def create_wrong_assocations(sources):
 
     # removed kbdock from here
 
-    file1 = open(result_address + '3did', 'r')
+    file1 = open(source_address + '3did', 'r')
     gs = set()
     for line in file1:
         line_sp = line.rstrip().split('\t')
@@ -489,6 +489,9 @@ def assign_interaction(sources):
 
     result_calculated = open(result_address + 'pfam-pfam-interaction-calculated', 'w')
     result_merged = open(result_address + 'pfam-pfam-interaction-merged', 'w')
+    header = 'domain1\tdomain2\t' + '\t'.join(source_names) + '\tscore\n'
+    result_calculated.write(header)
+    result_merged.write(header)
     for datum1 in info:
         for datum2 in info[datum1]:
             score = all_data_scores[datum1][datum2]
@@ -500,6 +503,8 @@ def assign_interaction(sources):
                 result_calculated.write(result_string)
 
     result_gold_standard = open(result_address + 'pfam-pfam-interaction-goldstandard', 'w')
+    header = 'domain1\tdomain2\t' + '\t'.join(source_names) + '\tscore\tflag\n'
+    result_gold_standard.write(header)
     for datum in gold_standard:
         if datum in train_set:
             flag = 'train-'
@@ -521,6 +526,8 @@ def assign_interaction(sources):
         result_gold_standard.write(result_gold)
 
     result_negative = open(result_address + 'pfam-pfam-interaction-negative', 'w')
+    header = 'domain1\tdomain2\tscore\tflag\n'
+    result_negative.write(header)
     for datum in gold_standard_negative_set:
         if datum in train_negative_set:
             flag = 'train-'

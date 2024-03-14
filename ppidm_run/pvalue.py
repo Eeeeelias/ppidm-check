@@ -1,6 +1,7 @@
 import datetime
 import math
 from math import sqrt
+import sys
 
 from ppidm_run.main import source_address, result_address
 
@@ -30,6 +31,9 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
     for seq_seq in allPPI:
         seq_split = seq_seq.split('_')
         if len(seq_split) > 2:
+            if len(seq_split) == 3:
+                print("Make sure there are no _ in the sequence names")
+                sys.exit(1)
             seq1 = seq_split[0] + '_' + seq_split[1]
             seq2 = seq_split[2] + '_' + seq_split[3]
         else:
@@ -53,16 +57,6 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
                     domain_seq_seq[domain] = set()
                     domain_seq_seq[domain].add(seq_seq)
 
-        if source == 'source6_sifts':
-            if seq1 in pdbchainDom:
-                domains = pdbchainDom[seq1]
-                for domain in domains:
-                    if domain in domain_seq_seq:
-                        domain_seq_seq[domain].add(seq_seq)
-                    else:
-                        domain_seq_seq[domain] = set()
-                        domain_seq_seq[domain].add(seq_seq)
-
             if seq2 in pdbchainDom:
                 domains = pdbchainDom[seq2]
                 for domain in domains:
@@ -77,7 +71,9 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
 
     # TODO: make this into something that is actually readable and works for all sources
     file1 = open(result_address + 'pfam-pfam-interaction-calculated', 'r')
-    # file1.readline()
+    head = file1.readline().rstrip().split("\t")
+    # get index where the source name is in the header
+    source_index = head.index(source_name)
     c = 0
     for line in file1:
         lineSplit = line.rstrip().split("\t")
@@ -85,22 +81,8 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
         dom2 = lineSplit[1]
         AssocScore = lineSplit[-1]
         source_score = 0
-        if source[8:] == 'intact':
-            source_score = lineSplit[2]
-        elif source[8:] == 'dip':
-            source_score = lineSplit[3]
-        elif source[8:] == 'mint':
-            source_score = lineSplit[4]
-        elif source[8:] == 'biogrid':
-            source_score = lineSplit[5]
-        elif source[8:] == 'string-exp':
-            source_score = lineSplit[6]
-        elif source[8:] == 'string-rest':
-            source_score = lineSplit[7]
-        elif source[8:] == 'sifts_accession':
-            source_score = lineSplit[8]
-        elif source[8:] == 'hprd':
-            source_score = lineSplit[9]
+        if source_index < len(lineSplit):
+            source_score = lineSplit[source_index]
 
         Ne = 0
         Md = 0
@@ -115,7 +97,6 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
 
         if Kde == 0 or source_score == '0':
             final_result.write(str(dom1) + "\t" + str(dom2) + "\t" + str(AssocScore) + "\t" + "NA" + "\n")
-            print("writing:", c)
             c += 1
             # print("-")
             continue
@@ -195,7 +176,6 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
         if p_value > 1:
             p_value = "1*"
         final_result.write(str(dom1) + "\t" + str(dom2) + "\t" + str(AssocScore) + "\t" + str(p_value) + "\n")
-        print("writing:", c)
         c += 1
         continue
 
@@ -204,70 +184,28 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
     print("Running Time: " + str(end - start) + "\n")
 
 
-def accumulate_pvalues():
-    intact_pvalue = dict()
-    dip_pvalue = dict()
-    mint_pvalue = dict()
-    biogrid_pvalue = dict()
-    string_exp_pvalue = dict()
-    string_rest_pvalue = dict()
-    sifts_pvalue = dict()
-    hprd_pvalue = dict()
+def accumulate_pvalues(sources):
+    source_names = [x[8:] for x in sources]
+    pvalue_sources = {x: {} for x in source_names}
     caps_score = dict()
 
     file1 = open(result_address + 'pfam-pfam-interaction-calculated', 'r')
     for line in file1:
         line_sp = line.rstrip().split("\t")
-        caps_score[(line_sp[0], line_sp[1])] = line_sp[10]
+        caps_score[(line_sp[0], line_sp[1])] = line_sp[-1]
 
-    file1 = open(result_address + 'newpvalue-intact', 'r')
-    for line in file1:
-        line_sp = line.rstrip().split('\t')
-        intact_pvalue[(line_sp[0], line_sp[1])] = line_sp[3]
-        # caps_score[(line_sp[0], line_sp[1])] = line_sp[2]
+    for source in source_names:
+        with open(result_address + 'newpvalue-' + source, 'r') as file1:
+            for line in file1:
+                line_sp = line.rstrip().split("\t")
+                pvalue_sources[source][(line_sp[0], line_sp[1])] = line_sp[3]
 
-    file1 = open(result_address + 'newpvalue-dip', 'r')
-    for line in file1:
-        line_sp = line.rstrip().split('\t')
-        dip_pvalue[(line_sp[0], line_sp[1])] = line_sp[3]
-
-    file1 = open(result_address + 'newpvalue-mint', 'r')
-    for line in file1:
-        line_sp = line.rstrip().split('\t')
-        mint_pvalue[(line_sp[0], line_sp[1])] = line_sp[3]
-
-    file1 = open(result_address + 'newpvalue-biogrid', 'r')
-    for line in file1:
-        line_sp = line.rstrip().split('\t')
-        biogrid_pvalue[(line_sp[0], line_sp[1])] = line_sp[3]
-
-    file1 = open(result_address + 'newpvalue-string-exp', 'r')
-    for line in file1:
-        line_sp = line.rstrip().split('\t')
-        string_exp_pvalue[(line_sp[0], line_sp[1])] = line_sp[3]
-
-    file1 = open(result_address + 'newpvalue-string-rest', 'r')
-    for line in file1:
-        line_sp = line.rstrip().split('\t')
-        string_rest_pvalue[(line_sp[0], line_sp[1])] = line_sp[3]
-
-    file1 = open(result_address + 'newpvalue-sifts', 'r')
-    for line in file1:
-        line_sp = line.rstrip().split('\t')
-        sifts_pvalue[(line_sp[0], line_sp[1])] = line_sp[3]
-
-    file1 = open(result_address + 'newpvalue-hprd', 'r')
-    for line in file1:
-        line_sp = line.rstrip().split('\t')
-        hprd_pvalue[(line_sp[0], line_sp[1])] = line_sp[3]
-
-    result = open(result_address + 'newpvalue-all', 'w')
-    for item in intact_pvalue:
-        result.write(
-            item[0] + '\t' + item[1] + '\t' + caps_score[item] + '\t' + intact_pvalue[item] + '\t' + dip_pvalue[item] +
-            '\t' + mint_pvalue[item] + '\t' + hprd_pvalue[item] + '\t' + biogrid_pvalue[item] + '\t' +
-            string_exp_pvalue[item] + '\t' + string_rest_pvalue[item] + '\t' + sifts_pvalue[item] + '\n')
-
+    header = 'd1\td2\tcaps_score\t' + '\t'.join(source_names) + '\n'
+    with open(result_address + 'newpvalue-all', 'w') as result:
+        result.write(header)
+        for item in pvalue_sources[source_names[0]]:
+            p_value_string = '\t'.join([pvalue_sources[x][item] for x in source_names])
+            result.write(item[0] + '\t' + item[1] + '\t' + caps_score[item] + '\t' + p_value_string + '\n')
     result.close()
 
 
@@ -280,28 +218,27 @@ def gold_silver_bronze():
         gs.add((line_sp[1], line_sp[0]))
 
     calculated_dict = {}
-    lenght = 0
+    length = 0
     calculated = open(result_address + 'pfam-pfam-interaction-calculated', 'r')
+    head = calculated.readline().rstrip().split("\t")
     for line in calculated:
-        lenght += 1
+        length += 1
         line_sp = line.rstrip().split("\t")
         calculated_dict[(line_sp[0], line_sp[1])] = dict()
-        calculated_dict[(line_sp[0], line_sp[1])]['caps'] = line_sp[10]
-        calculated_dict[(line_sp[0], line_sp[1])]['intact'] = line_sp[2]
-        calculated_dict[(line_sp[0], line_sp[1])]['dip'] = line_sp[3]
-        calculated_dict[(line_sp[0], line_sp[1])]['mint'] = line_sp[4]
-        calculated_dict[(line_sp[0], line_sp[1])]['biogrid'] = line_sp[5]
-        calculated_dict[(line_sp[0], line_sp[1])]['string_exp'] = line_sp[6]
-        calculated_dict[(line_sp[0], line_sp[1])]['string_rest'] = line_sp[7]
-        calculated_dict[(line_sp[0], line_sp[1])]['sifts_acc'] = line_sp[8]
-        calculated_dict[(line_sp[0], line_sp[1])]['hprd'] = line_sp[9]
+        calculated_dict[(line_sp[0], line_sp[1])]['caps'] = line_sp[-1]
+        for i in range(2, len(head) - 1):
+            calculated_dict[(line_sp[0], line_sp[1])][head[i]] = line_sp[i]
 
+    # write the results
     result = open(result_address + 'result-all', 'w')
-    result.write(
-        "D1\tD2\tSCORE\tINTACT_SCORE\tINTACT_PV\tDIP_SCORE\tDIP_PV\tMINT_SCORE\tMINT_PV\tHPRD_SCORE\tHPRD_PV"
-        "\tBIOGRID_SCORE\tBIOGRID_PV\tSTRING_EXP_SCORE\tSTRING_EXP_PV\tSTRING_REST_SCORE\tSTRING_REST_PV\tSIFTS_SCORE"
-        "\tSIFTS_PV\tCLASS\tINTERPRO\n")
     pv = open(result_address + 'newpvalue-all', 'r')
+    pvalue_all_head = pv.readline().rstrip().split("\t")
+    available_sources = pvalue_all_head[3:]
+    # old "D1\tD2\tSCORE\tINTACT_SCORE\tINTACT_PV\tDIP_SCORE\tDIP_PV\tMINT_SCORE\tMINT_PV\tHPRD_SCORE\tHPRD_PV"
+    #         "\tBIOGRID_SCORE\tBIOGRID_PV\tSTRING_EXP_SCORE\tSTRING_EXP_PV\tSTRING_REST_SCORE\tSTRING_REST_PV\tSIFTS_SCORE"
+    #         "\tSIFTS_PV\tCLASS\tINTERPRO\n
+    header = 'D1\tD2\tSCORE\t' + '\t'.join([f"{x.upper()}_SCORE\t{x.upper()}_PV" for x in available_sources]) + '\tCLASS\tINTERPRO\n'
+    result.write(header)
     d_gold_distinct = set()
     d_silver_distinct = set()
     d_bronze_distinct = set()
@@ -314,26 +251,22 @@ def gold_silver_bronze():
             gs_flag = 'Yes'
         caps_score = line_sp[2]
         if caps_score != calculated_dict[(d1, d2)]['caps']:
-            print("Something Wrong!")
+            print("Something wrong!")
             print(d1, d2, caps_score, calculated_dict[(d1, d2)]['caps'])
             exit()
-        intact = line_sp[3]
-        dip = line_sp[4]
-        mint = line_sp[5]
-        hprd = line_sp[6]
-        biogrid = line_sp[7]
-        string_exp = line_sp[8]
-        string_rest = line_sp[9]
-        sifts = line_sp[10]
-        critical_val = 0.05 / lenght
+        # replace this with something that works for all sources
+        pvalues_item = {}
+        for i, source in enumerate(available_sources):
+            pvalues_item[source] = line_sp[i + 3]
+        critical_val = 0.05 / length
 
         how_many_significant = 0
         how_many = 0
 
-        for i in [intact, dip, mint, hprd, biogrid, string_exp, string_rest, sifts]:
-            if i != 'NA':
+        for source in available_sources:
+            if pvalues_item[source] != 'NA':
                 how_many += 1
-                if i != '1*' and float(i) <= critical_val:
+                if pvalues_item[source] != '1*' and float(pvalues_item[source]) <= critical_val:
                     how_many_significant += 1
 
         if how_many >= 4 and how_many == how_many_significant:
@@ -349,17 +282,16 @@ def gold_silver_bronze():
             d_bronze_distinct.add(d1)
             d_bronze_distinct.add(d2)
 
-        result.write(f"{d1}\t{d2}\t{caps_score}\t{calculated_dict[(d1,d2)]['intact']}\t{intact}\t"
-                     f"{calculated_dict[(d1, d2)]['dip']}\t{dip}\t{calculated_dict[(d1,d2)]['mint']}\t{mint}\t"
-                     f"{calculated_dict[(d1, d2)]['hprd']}\t{hprd}\t{calculated_dict[(d1, d2)]['biogrid']}\t{biogrid}\t"
-                     f"{calculated_dict[(d1, d2)]['string_exp']}\t{string_exp}\t{calculated_dict[(d1,d2)]['string_rest']}"
-                     f"\t{string_rest}\t{calculated_dict[(d1, d2)]['sifts_acc']}\t{sifts}\t{quality}\t{gs_flag}\n")
+        line_to_write = f"{d1}\t{d2}\t{caps_score}"
+        for source in available_sources:
+            line_to_write += f"\t{calculated_dict[(d1,d2)][source]}\t{pvalues_item[source]}"
+        line_to_write += f"\t{quality}\t{gs_flag}\n"
+        result.write(line_to_write)
 
     result.close()
 
-    print('distinct gold doms: ', d_gold_distinct)
-    print('distinct silver doms: ', d_silver_distinct)
-    print('distinct bronze doms: ', d_bronze_distinct)
+    print('total predicted DDIs: gold:', len(d_gold_distinct),
+          'silver:', len(d_silver_distinct), 'bronze:', len(d_bronze_distinct))
 
 
 def one_to_one():
