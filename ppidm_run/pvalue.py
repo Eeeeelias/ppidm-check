@@ -69,7 +69,6 @@ def pvalue_calculation(source, seqDom, pdbchainDom):
     source_name = source[8:]
     final_result = open(result_address + 'newpvalue-' + source_name, 'w')
 
-    # TODO: make this into something that is actually readable and works for all sources
     file1 = open(result_address + 'pfam-pfam-interaction-calculated', 'r')
     head = file1.readline().rstrip().split("\t")
     # get index where the source name is in the header
@@ -234,9 +233,6 @@ def gold_silver_bronze():
     pv = open(result_address + 'newpvalue-all', 'r')
     pvalue_all_head = pv.readline().rstrip().split("\t")
     available_sources = pvalue_all_head[3:]
-    # old "D1\tD2\tSCORE\tINTACT_SCORE\tINTACT_PV\tDIP_SCORE\tDIP_PV\tMINT_SCORE\tMINT_PV\tHPRD_SCORE\tHPRD_PV"
-    #         "\tBIOGRID_SCORE\tBIOGRID_PV\tSTRING_EXP_SCORE\tSTRING_EXP_PV\tSTRING_REST_SCORE\tSTRING_REST_PV\tSIFTS_SCORE"
-    #         "\tSIFTS_PV\tCLASS\tINTERPRO\n
     header = 'D1\tD2\tSCORE\t' + '\t'.join([f"{x.upper()}_SCORE\t{x.upper()}_PV" for x in available_sources]) + '\tCLASS\tINTERPRO\n'
     result.write(header)
     d_gold_distinct = set()

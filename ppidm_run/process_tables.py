@@ -117,8 +117,9 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
         subsets1 = list(subsets1)
         subsets2 = list(subsets2)
 
-        # seq_seq = item1 + '_' + item2 if item1 < item2 else item2 + '_' + item1
-        seq_seq = item1 + '_' + item2
+        # this is for ordered data, used later when extending DIGGER graphs
+        seq_seq = item1 + '_' + item2 if item1 < item2 else item2 + '_' + item1
+        # seq_seq = item1 + '_' + item2
 
         for set1 in subsets1:
             for set2 in subsets2:
@@ -160,8 +161,6 @@ def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbch
 
     file1.close()
     result.close()
-    # returning here if you want to make the ordered data
-    # return
 
     result_file = open(result_address + domain + '-' + domain + '-interaction-' + source[8:], 'w')
 
