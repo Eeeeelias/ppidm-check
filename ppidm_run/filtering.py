@@ -5,6 +5,9 @@ import pickle
 import sys
 import itertools
 
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 from ppidm_run.main import result_address, source_address
 import random
 from math import sqrt
@@ -86,6 +89,173 @@ def extract_info(relevant_pfams: set, score_info: dict):
             result[pfam_id] = 0
     pickle.dump(result, open('../pickles/info_scores.pickle', 'wb'))
     print("Wrote scores to pickle")
+
+
+def plot_loss_curve(losses: list):
+    plt.plot(losses)
+    plt.xlabel('Iterations')
+    plt.ylabel('Loss')
+    plt.show()
+
+
+def plot_score_density(positive_scores: list, negative_scores: list, v_lines=False):
+    plt.style.use('ggplot')
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+
+    sns.kdeplot(negative_scores, color='orange', ax=ax1)
+    if v_lines:
+        ax1.axvline(x=0.01586, linestyle='dotted', color='#0097ff', label='threshold (0.01586)')
+        ax1.axvline(x=0.03, linestyle='dotted', color='#fc1b80', label='threshold (0.03)')
+    ax1.set_ylabel('Negative train - Density')
+
+    sns.kdeplot(positive_scores, color='blue', ax=ax2)
+    if v_lines:
+        ax2.axvline(x=0.01586, linestyle='dotted', color='#0097ff', label='threshold')
+        ax2.axvline(x=0.03, linestyle='dotted', color='#fc1b80')
+    ax2.set_ylabel('Positive train - Density')
+
+    plt.xlim(0, 1)
+
+    # Adding labels to the plot
+    plt.xlabel('Score')
+    plt.suptitle('Score density in negatives vs. positives')
+
+    # Displaying the plot
+    plt.tight_layout()
+    ax1.legend()
+    plt.show()
+
+
+def calculate_coefficient_auc(coefficients: tuple, info: dict, gold_standard: set, background_data: list, source_names: list):
+    coefficients = list(coefficients)
+    # print(coefficients)
+    # make sure coefficients are integers between 1-100
+    # assert all(1 <= coef <= 100 for coef in coefficients)
+    # background_data = random.sample(background_data, len(gold_standard))
+    background_data = random.sample(background_data, len(gold_standard))
+    len_background = len(background_data)
+    coef_sum = sum(coefficients)
+    all_data_positive_negative = {}
+    for datum in gold_standard:
+        try:
+            dom_score = coef_score(coefficients, info[datum[0]][datum[1]], source_names)
+            all_data_positive_negative[datum] = sum(dom_score) / coef_sum
+        except KeyError:
+            all_data_positive_negative[datum] = 0
+
+    for datum in background_data:
+        try:
+            dom_score = coef_score(coefficients, info[datum[0]][datum[1]], source_names)
+            all_data_positive_negative[datum] = sum(dom_score) / coef_sum
+        except KeyError:
+            pass
+
+    sorted_all_data_positive_negative = sorted(all_data_positive_negative.items(),
+                                               key=operator.itemgetter(1), reverse=True)
+    yindex = 0.0
+    area_under_curve = 0.0
+
+    for datum in sorted_all_data_positive_negative:
+        if datum[0] in gold_standard:
+            yindex += 1
+        else:
+            area_under_curve += (yindex / len(gold_standard)) * (1.0 / len_background)
+    return 1 - area_under_curve
+
+
+def calculate_coefficient_sum(coefficients: tuple, info: dict, gold_standard: set, background_data: list, source_names: list):
+    # calculate the sum of the scores for the given coefficients
+    coefficients = list(coefficients)
+    background_data = random.sample(background_data, len(gold_standard))
+    len_background = len(background_data)
+    coef_sum = sum(coefficients)
+    all_positive = 0
+    all_background = 0
+    for datum in gold_standard:
+        try:
+            dom_score = coef_score(coefficients, info[datum[0]][datum[1]], source_names)
+            all_positive += sum(dom_score) / coef_sum
+        except KeyError:
+            pass
+
+    for datum in background_data:
+        try:
+            dom_score = coef_score(coefficients, info[datum[0]][datum[1]], source_names)
+            all_background += sum(dom_score) / coef_sum
+        except KeyError:
+            pass
+
+    all_positive = all_positive / len(gold_standard)
+    all_background = all_background / len_background
+    return all_positive - all_background
+
+
+def best_coefficients_gd(info: dict, gold_standard: set, background_data: list, source_names: list):
+    num_sources = len(source_names)
+    # Initialize coefficients
+    coefficients = np.random.rand(num_sources)
+    # Initialize loss
+    losses = []
+    # Set hyperparameters
+    learning_rate = 0.1
+    max_iterations = 100
+    tolerance = 1e-6
+
+    # Gradient Descent
+    for iteration in range(max_iterations):
+    # Calculate gradient
+        gradient = np.zeros_like(coefficients)
+        for i in range(num_sources):
+            epsilon = 0.001
+            a = calculate_coefficient_sum(((coefficients + epsilon) * 100).astype(int), info, gold_standard, background_data,
+                                          source_names)
+            b = calculate_coefficient_sum(((coefficients - epsilon) * 100).astype(int), info, gold_standard, background_data,
+                                          source_names)
+            gradient[i] = (a - b) / 2e-5
+
+        loss = np.linalg.norm(gradient)
+        # print learning progress
+        print(f"Iteration {iteration}: Learning rate: {learning_rate} Loss: {loss}")
+        # Update coefficients
+        coefficients -= learning_rate * gradient
+        losses.append(loss)
+        # Check convergence
+        if loss < tolerance:
+            print("Converged at iteration", iteration)
+            break
+    else:
+        print("Did not converge within maximum iterations")
+    print("Final coefficients:", (coefficients * 100).astype(int))
+    plot_loss_curve(losses)
+    return {f'coef{i}': int(coef*100) for i, coef in enumerate(coefficients, 1)}
+
+
+def best_coefficients(info: dict, gold_standard: set, background_data: list, source_names: list):
+    num_sources = len(source_names)
+    # forgive me for what I'm about to do
+    tried_coefficients = set()
+    best_coeffs = None
+    best_auc = 0.0
+    max_iterations = 5_000
+    iteration = 0
+
+    while iteration < max_iterations:
+        # try a new set of coefficients
+        coefficients = np.random.randint(1, 100, num_sources)
+        # make sure we don't try the same coefficients again
+        coefficients_tuple = tuple(coefficients)
+        if coefficients_tuple in tried_coefficients:
+            continue
+        tried_coefficients.add(coefficients_tuple)
+        # Calculate AUC
+        auc = calculate_coefficient_auc(coefficients, info, gold_standard, background_data, source_names)
+        if auc > best_auc:
+            best_auc = auc
+            best_coeffs = coefficients
+            print(f"New best AUC: {best_auc} with coefficients: {best_coeffs} at iteration {iteration}")
+        iteration += 1
+    print(f"Best AUC: {best_auc} with coefficients: {best_coeffs}")
+    return {f'coef{i}': int(coef * 100) for i, coef in enumerate(best_coeffs, 1)}
 
 
 def create_wrong_assocations(sources):
@@ -238,68 +408,12 @@ def assign_interaction(sources):
     print("Length of train set:", len(train_set))
     print("Length of test set:", len(test_set))
     print("Length of background data:", len(background_data))
-    # backgroundData = random.sample(backgroundData, len(backgroundData) / 100)
-    # print(len(backgroundData))
 
-    best_area_under_curve = 0
-
-    num_sources = len(sources)
-    best_coefs = {f'coef{i}': 0 for i in range(1, num_sources + 1)}
-
-    # TODO: give proper ranges that make sense for the coefficients and minimize the search space
-
-    # coefficient_ranges = [range(1, 2), range(5, 6), range(1, 2), range(9, 10), range(12, 13), range(6, 7), range(100, 101),
-    #                range(17, 18)]
-    coefficient_ranges = [range(1, 2)] * num_sources
-
-    # Generate all possible combinations of coefficients
-    for coefficients in itertools.product(*coefficient_ranges):
-        coefficients = list(coefficients)
-        lenSize = len(background_data)
-        coef_sum = sum(coefficients)
-        all_data_positive_negative = {}
-        for datum in gold_standard:
-            if datum[0] in info:
-                if datum[1] in info[datum[0]]:
-                    dom_score = coef_score(coefficients, info[datum[0]][datum[1]], source_names)
-                    all_data_positive_negative[datum] = sum(dom_score) / coef_sum
-                else:
-                    all_data_positive_negative[datum] = 0
-            else:
-                all_data_positive_negative[datum] = 0
-
-        for datum in background_data:
-            if datum[0] in info:
-                if datum[1] in info[datum[0]]:
-                    dom_score = coef_score(coefficients, info[datum[0]][datum[1]], source_names)
-                    all_data_positive_negative[datum] = sum(dom_score) / coef_sum
-
-        sorted_all_data_positive_negative = sorted(all_data_positive_negative.items(),
-                                                   key=operator.itemgetter(1), reverse=True)
-        yindex = 0.0
-        area_under_curve = 0.0
-
-        for datum in sorted_all_data_positive_negative:
-            # print(datum[0])
-            # print(gold_standard)
-            # raw_input()
-            if datum[0] in gold_standard:
-                yindex += 1
-            else:
-                area_under_curve += (yindex / len(gold_standard)) * (1.0 / lenSize)
-
-        print("AUC:", area_under_curve)
-        print("Coefficients:", coefficients)
-        print("Best Coefficients", list(best_coefs.values()))
-        print("\n")
-
-        if best_area_under_curve < area_under_curve:
-            best_area_under_curve = area_under_curve
-            best_coefs = {f'coef{i}': coef for i, coef in enumerate(coefficients, 1)}
-
-
-    print("Overall best coefs:", list(best_coefs.values()))
-    print("Best AUC:", best_area_under_curve)
+    print("Calculating coefficients, this will take a while...")
+    best_coefs = best_coefficients_gd(info, gold_standard, background_data, source_names)
+    # intact, mint, dip, biogrid, string, string, sifts, hprd
+    # string, biogrid, mint, intact, mippie
+    # best_coefs = {'coef1': 13, 'coef2': 2, 'coef3': 2, 'coef4': 6, 'coef5': 100}
 
     all_data_scores = dict()
     best_coefs = [x for x in best_coefs.values()]
@@ -377,6 +491,14 @@ def assign_interaction(sources):
     print("Length of negative train:", len(train_negative_set))
     print("Length of negative test:", len(test_negative_set))
     # print(train_negative_set)
+    negative_scores = []
+    for datum in train_negative_set:
+        negative_scores.append(negatives_score[datum])
+    positive_scores = []
+    for datum in train_set:
+        positive_scores.append(all_data_scores[datum[0]][datum[1]])
+
+    plot_score_density(positive_scores, negative_scores)
 
     best_fmeasure = 0
     best_threshold = 1000
