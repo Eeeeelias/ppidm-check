@@ -4,6 +4,7 @@ import datetime
 import pickle
 import sys
 import itertools
+import timeit
 
 import numpy as np
 import seaborn as sns
@@ -126,6 +127,16 @@ def plot_score_density(positive_scores: list, negative_scores: list, v_lines=Fal
     plt.show()
 
 
+def plot_auc_boxes(all_auc: dict):
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots()
+    ax.boxplot(all_auc.values())
+    ax.set_xticklabels(all_auc.keys())
+    plt.xlabel('Number of sources')
+    plt.ylabel('AUC')
+    plt.show()
+
+
 def calculate_coefficient_auc(coefficients: tuple, info: dict, gold_standard: set, background_data: list, source_names: list):
     coefficients = list(coefficients)
     # print(coefficients)
@@ -160,7 +171,7 @@ def calculate_coefficient_auc(coefficients: tuple, info: dict, gold_standard: se
             yindex += 1
         else:
             area_under_curve += (yindex / len(gold_standard)) * (1.0 / len_background)
-    return 1 - area_under_curve
+    return area_under_curve
 
 
 def calculate_coefficient_sum(coefficients: tuple, info: dict, gold_standard: set, background_data: list, source_names: list):
@@ -190,6 +201,7 @@ def calculate_coefficient_sum(coefficients: tuple, info: dict, gold_standard: se
     return all_positive - all_background
 
 
+# try to get the best coefficients using gradient descent
 def best_coefficients_gd(info: dict, gold_standard: set, background_data: list, source_names: list):
     num_sources = len(source_names)
     # Initialize coefficients
@@ -197,13 +209,12 @@ def best_coefficients_gd(info: dict, gold_standard: set, background_data: list, 
     # Initialize loss
     losses = []
     # Set hyperparameters
-    learning_rate = 0.1
+    learning_rate = 0.01
     max_iterations = 100
     tolerance = 1e-6
 
     # Gradient Descent
     for iteration in range(max_iterations):
-    # Calculate gradient
         gradient = np.zeros_like(coefficients)
         for i in range(num_sources):
             epsilon = 0.001
@@ -230,32 +241,69 @@ def best_coefficients_gd(info: dict, gold_standard: set, background_data: list, 
     return {f'coef{i}': int(coef*100) for i, coef in enumerate(coefficients, 1)}
 
 
+# try all coefficients for each source that wasn't in the original human data and assume the best
+# ones from human are still good
 def best_coefficients(info: dict, gold_standard: set, background_data: list, source_names: list):
+    # intact, mint, dip, biogrid, string, string, sifts, hprd
+    #               string,      biogrid,    mint,       intact,     mippie
+    # best_coefs = {'coef1': 13, 'coef2': 2, 'coef3': 2, 'coef4': 6, 'coef5': 100}
     num_sources = len(source_names)
     # forgive me for what I'm about to do
-    tried_coefficients = set()
     best_coeffs = None
     best_auc = 0.0
-    max_iterations = 5_000
-    iteration = 0
+    c = 0
 
-    while iteration < max_iterations:
+    start = timeit.default_timer()
+    for i in range(1, 101):
+        print(f"New i: {i}")
         # try a new set of coefficients
-        coefficients = np.random.randint(1, 100, num_sources)
+        for j in range(1, 101):
+            coefficients = (i, 1, 1, 5, j)
+            # make sure we don't try the same coefficients again
+            # Calculate AUC
+            auc = calculate_coefficient_auc(coefficients, info, gold_standard, background_data, source_names)
+            if auc > best_auc:
+                best_auc = auc
+                best_coeffs = coefficients
+                print(f"New best AUC: {best_auc} with coefficients: {best_coeffs}")
+            c += 1
+
+    print(f"Best AUC: {best_auc} with coefficients: {best_coeffs}")
+    print(f"Time taken: {timeit.default_timer() - start} for {c} iterations")
+    return {f'coef{i}': int(coef * 100) for i, coef in enumerate(best_coeffs, 1)}
+
+
+# get random coefficients and calculate AUC
+def best_coefficients_rand(info: dict, gold_standard: set, background_data: list, source_names: list):
+    num_sources = len(source_names)
+    best_coeffs = tuple([1] * num_sources)
+    tested = set()
+    all_auc = []
+    max_auc = 0.0
+    iterations = 1_000
+    i = 0
+
+    while i < iterations:
+        coefficients = np.random.randint(1, 101, num_sources)
+        coefficients = tuple(coefficients)
+
         # make sure we don't try the same coefficients again
-        coefficients_tuple = tuple(coefficients)
-        if coefficients_tuple in tried_coefficients:
+        if coefficients in tested:
             continue
-        tried_coefficients.add(coefficients_tuple)
         # Calculate AUC
         auc = calculate_coefficient_auc(coefficients, info, gold_standard, background_data, source_names)
-        if auc > best_auc:
-            best_auc = auc
+        if auc > max_auc:
+            max_auc = auc
             best_coeffs = coefficients
-            print(f"New best AUC: {best_auc} with coefficients: {best_coeffs} at iteration {iteration}")
-        iteration += 1
-    print(f"Best AUC: {best_auc} with coefficients: {best_coeffs}")
-    return {f'coef{i}': int(coef * 100) for i, coef in enumerate(best_coeffs, 1)}
+        all_auc.append(auc)
+        i += 1
+
+    print(f"Using {num_sources} sources")
+    print(f"Max AUC: {max(all_auc)}\nMin AUC: {min(all_auc)}")
+    print(f"Variance: {np.var(all_auc)}")
+    print(f"Standard deviation: {np.std(all_auc)}\n")
+    print(f"Best coefficients: {best_coeffs}")
+    return {f'coef{i}': coef for i, coef in enumerate(best_coeffs, 1)}, all_auc
 
 
 def create_wrong_assocations(sources):
@@ -381,9 +429,9 @@ def assign_interaction(sources):
 
     for source in sources:
         source_name = source[8:]
-        print("Getting interactions for source:", source_name)
         interaction, pfam, info, info_tuple_multiple = interactions(
             result_address + 'pfam-pfam-interaction-' + source_name, info, info_tuple_multiple, source_name)
+        print(f"Got {len(interaction)} interactions for source: {source_name}")
         source_names.append(source_name)
         interactions_sources[source_name] = interaction
         pfam_sources[source_name] = pfam
@@ -410,10 +458,7 @@ def assign_interaction(sources):
     print("Length of background data:", len(background_data))
 
     print("Calculating coefficients, this will take a while...")
-    best_coefs = best_coefficients_gd(info, gold_standard, background_data, source_names)
-    # intact, mint, dip, biogrid, string, string, sifts, hprd
-    # string, biogrid, mint, intact, mippie
-    # best_coefs = {'coef1': 13, 'coef2': 2, 'coef3': 2, 'coef4': 6, 'coef5': 100}
+    best_coefs, all_auc = best_coefficients_rand(info, gold_standard, background_data, source_names)
 
     all_data_scores = dict()
     best_coefs = [x for x in best_coefs.values()]

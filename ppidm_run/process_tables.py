@@ -1,4 +1,5 @@
 import datetime
+import os
 import sys
 import timeit
 from itertools import combinations, chain
@@ -62,7 +63,10 @@ def read_chain_dom():
     return seqDom, seqpdbchain, pdbchainDom
 
 
-def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbchainDom):
+def similarity_calculator_interaction(source, domain, seqDom, seqpdbchain, pdbchainDom, redo=False):
+    if not redo and os.path.exists(result_address + domain + '-' + domain + '-interaction-' + source[8:]):
+        print("Already done", source)
+        return
     start = datetime.datetime.now()
     print(f"SIMILARITY Calculator for {source} Interactions")
 
